@@ -1,0 +1,92 @@
+{
+  "id": "builtin_minimal_analog",
+  "name": "Minimal Analog",
+  "schemaVersion": 1,
+  "canvas": {
+    "width": 1080,
+    "height": 2400,
+    "background": "#000000"
+  },
+  "elements": [
+    {
+      "id": "clock_analog_main",
+      "name": "Analog Clock Face",
+      "type": "CLOCK",
+      "x": 540.0,
+      "y": 950.0,
+      "width": 500.0,
+      "height": 500.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "visibility": true,
+      "zIndex": 1,
+      "style": {
+        "color": "#FFFFFF",
+        "accentColor": "#E8A838",
+        "backgroundColor": "#00000000",
+        "fontSize": 24.0,
+        "fontWeight": "NORMAL",
+        "fontFamily": "DEFAULT",
+        "letterSpacing": 0.0,
+        "alignment": "CENTER",
+        "strokeWidth": 4.0,
+        "fill": false,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "clockStyle": "ANALOG",
+        "showSeconds": "true",
+        "showMarkers": "true",
+        "markerType": "TICKS"
+      }
+    },
+    {
+      "id": "date_analog_sub",
+      "name": "Sub Dial Date",
+      "type": "DATE",
+      "x": 540.0,
+      "y": 1250.0,
+      "width": 400.0,
+      "height": 40.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 0.7,
+      "visibility": true,
+      "zIndex": 2,
+      "style": {
+        "color": "#FFFFFF",
+        "accentColor": "#E8A838",
+        "backgroundColor": "#00000000",
+        "fontSize": 14.0,
+        "fontWeight": "MEDIUM",
+        "fontFamily": "DEFAULT",
+        "letterSpacing": 1.5,
+        "alignment": "CENTER",
+        "strokeWidth": 1.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "format": "EEE • MMM dd"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "AOD Studio",
+    "description": "Minimalist analog clock face with hour, minute, and second hands",
+    "category": "Analog"
+  }
+}

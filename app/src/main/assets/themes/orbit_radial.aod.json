@@ -1,0 +1,89 @@
+{
+  "id": "builtin_orbit_radial",
+  "name": "Minimal Orbit Radial",
+  "schemaVersion": 1,
+  "canvas": {
+    "width": 1080,
+    "height": 2400,
+    "background": "#000000"
+  },
+  "elements": [
+    {
+      "id": "clock_radial_orbit",
+      "name": "Radial Orbit Dial",
+      "type": "CLOCK",
+      "x": 540.0,
+      "y": 950.0,
+      "width": 450.0,
+      "height": 450.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "visibility": true,
+      "zIndex": 1,
+      "style": {
+        "color": "#FFFFFF",
+        "accentColor": "#5EC98A",
+        "backgroundColor": "#00000000",
+        "fontSize": 48.0,
+        "fontWeight": "LIGHT",
+        "fontFamily": "DISPLAY",
+        "letterSpacing": 1.0,
+        "alignment": "CENTER",
+        "strokeWidth": 3.0,
+        "fill": false,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "ORBIT",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "clockStyle": "ORBIT"
+      }
+    },
+    {
+      "id": "battery_radial_ring",
+      "name": "Battery Arc Ring",
+      "type": "BATTERY",
+      "x": 540.0,
+      "y": 1250.0,
+      "width": 180.0,
+      "height": 40.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 0.9,
+      "visibility": true,
+      "zIndex": 2,
+      "style": {
+        "color": "#5EC98A",
+        "accentColor": "#5EC98A",
+        "backgroundColor": "#00000000",
+        "fontSize": 14.0,
+        "fontWeight": "MEDIUM",
+        "fontFamily": "DEFAULT",
+        "letterSpacing": 0.5,
+        "alignment": "CENTER",
+        "strokeWidth": 2.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "batteryStyle": "PERCENTAGE"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "AOD Studio",
+    "description": "Concentric radial orbit dial with emerald accents",
+    "category": "Orbit"
+  }
+}

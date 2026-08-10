@@ -1,0 +1,125 @@
+{
+  "id": "builtin_minimal_orbit",
+  "name": "Minimal Orbit",
+  "schemaVersion": 1,
+  "canvas": {
+    "width": 1080,
+    "height": 2400,
+    "background": "#000000"
+  },
+  "elements": [
+    {
+      "id": "clock_main",
+      "name": "Digital Clock",
+      "type": "CLOCK",
+      "x": 540.0,
+      "y": 900.0,
+      "width": 500.0,
+      "height": 200.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "visibility": true,
+      "zIndex": 1,
+      "style": {
+        "color": "#FFFFFF",
+        "accentColor": "#E8A838",
+        "backgroundColor": "#00000000",
+        "fontSize": 72.0,
+        "fontWeight": "THIN",
+        "fontFamily": "DEFAULT",
+        "letterSpacing": 2.0,
+        "alignment": "CENTER",
+        "strokeWidth": 2.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "format": "HH:mm"
+      }
+    },
+    {
+      "id": "date_main",
+      "name": "Date Display",
+      "type": "DATE",
+      "x": 540.0,
+      "y": 1050.0,
+      "width": 400.0,
+      "height": 50.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 0.7,
+      "visibility": true,
+      "zIndex": 2,
+      "style": {
+        "color": "#FFFFFF",
+        "accentColor": "#E8A838",
+        "backgroundColor": "#00000000",
+        "fontSize": 16.0,
+        "fontWeight": "MEDIUM",
+        "fontFamily": "DEFAULT",
+        "letterSpacing": 1.5,
+        "alignment": "CENTER",
+        "strokeWidth": 1.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "format": "EEE • MMM dd"
+      }
+    },
+    {
+      "id": "battery_main",
+      "name": "Battery Status",
+      "type": "BATTERY",
+      "x": 540.0,
+      "y": 1150.0,
+      "width": 200.0,
+      "height": 40.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "visibility": true,
+      "zIndex": 3,
+      "style": {
+        "color": "#E8A838",
+        "accentColor": "#E8A838",
+        "backgroundColor": "#00000000",
+        "fontSize": 14.0,
+        "fontWeight": "MEDIUM",
+        "fontFamily": "DEFAULT",
+        "letterSpacing": 0.5,
+        "alignment": "CENTER",
+        "strokeWidth": 2.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "batteryStyle": "PERCENTAGE"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "AOD Studio",
+    "description": "Minimalist orbit clock with date and battery status",
+    "category": "Minimal"
+  }
+}

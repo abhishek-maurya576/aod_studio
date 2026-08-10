@@ -1,0 +1,89 @@
+{
+  "id": "builtin_typography_stacked",
+  "name": "Typography Stacked",
+  "schemaVersion": 1,
+  "canvas": {
+    "width": 1080,
+    "height": 2400,
+    "background": "#000000"
+  },
+  "elements": [
+    {
+      "id": "clock_typography_stacked",
+      "name": "Stacked Digits Clock",
+      "type": "CLOCK",
+      "x": 540.0,
+      "y": 900.0,
+      "width": 500.0,
+      "height": 400.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "visibility": true,
+      "zIndex": 1,
+      "style": {
+        "color": "#FFFFFF",
+        "accentColor": "#E8A838",
+        "backgroundColor": "#00000000",
+        "fontSize": 120.0,
+        "fontWeight": "BOLD",
+        "fontFamily": "DISPLAY",
+        "letterSpacing": 2.0,
+        "alignment": "CENTER",
+        "strokeWidth": 2.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "clockStyle": "STACKED"
+      }
+    },
+    {
+      "id": "date_typo_sub",
+      "name": "Sub Date Text",
+      "type": "DATE",
+      "x": 540.0,
+      "y": 1150.0,
+      "width": 400.0,
+      "height": 40.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 0.7,
+      "visibility": true,
+      "zIndex": 2,
+      "style": {
+        "color": "#FFFFFF",
+        "accentColor": "#E8A838",
+        "backgroundColor": "#00000000",
+        "fontSize": 14.0,
+        "fontWeight": "MEDIUM",
+        "fontFamily": "DEFAULT",
+        "letterSpacing": 1.5,
+        "alignment": "CENTER",
+        "strokeWidth": 1.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "format": "MON • AUG 10"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "AOD Studio",
+    "description": "Bold stacked typography digits AOD style",
+    "category": "Typography"
+  }
+}

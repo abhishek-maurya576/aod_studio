@@ -1,0 +1,89 @@
+{
+  "id": "builtin_digital_bold",
+  "name": "Digital Bold",
+  "schemaVersion": 1,
+  "canvas": {
+    "width": 1080,
+    "height": 2400,
+    "background": "#000000"
+  },
+  "elements": [
+    {
+      "id": "clock_digital",
+      "name": "Bold Digital Clock",
+      "type": "CLOCK",
+      "x": 540.0,
+      "y": 800.0,
+      "width": 600.0,
+      "height": 250.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "visibility": true,
+      "zIndex": 1,
+      "style": {
+        "color": "#E8A838",
+        "accentColor": "#E8A838",
+        "backgroundColor": "#00000000",
+        "fontSize": 96.0,
+        "fontWeight": "BOLD",
+        "fontFamily": "MONO",
+        "letterSpacing": 4.0,
+        "alignment": "CENTER",
+        "strokeWidth": 2.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "format": "HH:mm"
+      }
+    },
+    {
+      "id": "date_digital",
+      "name": "Date String",
+      "type": "DATE",
+      "x": 540.0,
+      "y": 980.0,
+      "width": 400.0,
+      "height": 40.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 0.8,
+      "visibility": true,
+      "zIndex": 2,
+      "style": {
+        "color": "#FFFFFF",
+        "accentColor": "#E8A838",
+        "backgroundColor": "#00000000",
+        "fontSize": 14.0,
+        "fontWeight": "NORMAL",
+        "fontFamily": "DEFAULT",
+        "letterSpacing": 1.0,
+        "alignment": "CENTER",
+        "strokeWidth": 1.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "format": "EEEE, dd MMMM"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "AOD Studio",
+    "description": "High contrast bold digital clock with monospace typography",
+    "category": "Digital"
+  }
+}
