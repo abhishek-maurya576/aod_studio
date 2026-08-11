@@ -1,0 +1,89 @@
+{
+  "id": "builtin_neon_pulse",
+  "name": "Neon Pulse",
+  "schemaVersion": 1,
+  "canvas": {
+    "width": 1080,
+    "height": 2400,
+    "background": "#000000"
+  },
+  "elements": [
+    {
+      "id": "clock_pulse",
+      "name": "Neon Pulse Clock",
+      "type": "CLOCK",
+      "x": 540.0,
+      "y": 850.0,
+      "width": 500.0,
+      "height": 200.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "visibility": true,
+      "zIndex": 1,
+      "style": {
+        "color": "#A855F7",
+        "accentColor": "#38BDF8",
+        "backgroundColor": "#00000000",
+        "fontSize": 96.0,
+        "fontWeight": "BOLD",
+        "fontFamily": "NEON",
+        "letterSpacing": 4.0,
+        "alignment": "CENTER",
+        "strokeWidth": 2.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "PULSE",
+        "durationMs": 2000,
+        "repeat": true,
+        "easing": "EASE_IN_OUT"
+      },
+      "properties": {
+        "format": "HH:mm"
+      }
+    },
+    {
+      "id": "date_pulse",
+      "name": "Neon Date",
+      "type": "DATE",
+      "x": 540.0,
+      "y": 1000.0,
+      "width": 400.0,
+      "height": 50.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 0.85,
+      "visibility": true,
+      "zIndex": 2,
+      "style": {
+        "color": "#38BDF8",
+        "accentColor": "#A855F7",
+        "backgroundColor": "#00000000",
+        "fontSize": 18.0,
+        "fontWeight": "MEDIUM",
+        "fontFamily": "CYBER",
+        "letterSpacing": 2.0,
+        "alignment": "CENTER",
+        "strokeWidth": 1.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "format": "EEE • MMM dd"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "AOD Studio",
+    "description": "Pulsing Neon Cyber theme with Cyan and Purple accents",
+    "category": "Digital"
+  }
+}

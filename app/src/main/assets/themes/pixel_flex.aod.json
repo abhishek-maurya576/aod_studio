@@ -1,0 +1,125 @@
+{
+  "id": "builtin_pixel_flex",
+  "name": "Pixel Flex",
+  "schemaVersion": 1,
+  "canvas": {
+    "width": 1080,
+    "height": 2400,
+    "background": "#000000"
+  },
+  "elements": [
+    {
+      "id": "clock_pixel",
+      "name": "Pixel Clock",
+      "type": "CLOCK",
+      "x": 540.0,
+      "y": 850.0,
+      "width": 500.0,
+      "height": 200.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "visibility": true,
+      "zIndex": 1,
+      "style": {
+        "color": "#5EC98A",
+        "accentColor": "#5EC98A",
+        "backgroundColor": "#00000000",
+        "fontSize": 92.0,
+        "fontWeight": "BOLD",
+        "fontFamily": "NEON",
+        "letterSpacing": 3.0,
+        "alignment": "CENTER",
+        "strokeWidth": 2.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "format": "HH:mm"
+      }
+    },
+    {
+      "id": "date_pixel",
+      "name": "Pixel Date",
+      "type": "DATE",
+      "x": 540.0,
+      "y": 1000.0,
+      "width": 400.0,
+      "height": 50.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 0.85,
+      "visibility": true,
+      "zIndex": 2,
+      "style": {
+        "color": "#FFFFFF",
+        "accentColor": "#5EC98A",
+        "backgroundColor": "#00000000",
+        "fontSize": 18.0,
+        "fontWeight": "MEDIUM",
+        "fontFamily": "DISPLAY",
+        "letterSpacing": 2.0,
+        "alignment": "CENTER",
+        "strokeWidth": 1.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "format": "EEEE • MMM dd"
+      }
+    },
+    {
+      "id": "battery_pixel",
+      "name": "Pixel Battery",
+      "type": "BATTERY",
+      "x": 540.0,
+      "y": 1100.0,
+      "width": 200.0,
+      "height": 40.0,
+      "rotation": 0.0,
+      "scale": 1.0,
+      "opacity": 1.0,
+      "visibility": true,
+      "zIndex": 3,
+      "style": {
+        "color": "#5EC98A",
+        "accentColor": "#5EC98A",
+        "backgroundColor": "#00000000",
+        "fontSize": 14.0,
+        "fontWeight": "MEDIUM",
+        "fontFamily": "NEON",
+        "letterSpacing": 1.0,
+        "alignment": "CENTER",
+        "strokeWidth": 2.0,
+        "fill": true,
+        "cornerRadius": 0.0
+      },
+      "animation": {
+        "type": "NONE",
+        "durationMs": 1200,
+        "repeat": true,
+        "easing": "LINEAR"
+      },
+      "properties": {
+        "batteryStyle": "PERCENTAGE"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "AOD Studio",
+    "description": "Pixel Flex layout with Emerald Neon typography",
+    "category": "Digital"
+  }
+}

@@ -7,7 +7,7 @@ import com.aodstudio.app.domain.model.AODElement
 import com.aodstudio.app.domain.model.AODStyle
 
 /**
- * Utility functions for Canvas painting, color parsing, typography, and uniform coordinate transformation.
+ * Utility functions for Canvas painting, color parsing, fancy typography, and uniform coordinate transformation.
  */
 object RendererUtils {
 
@@ -40,7 +40,7 @@ object RendererUtils {
     }
 
     /**
-     * Creates and configures an Android Paint instance based on AODStyle properties using uniform scaleFactor.
+     * Creates and configures an Android Paint instance with fancy font typefaces.
      */
     fun createTextPaint(style: AODStyle, scale: Float = 1f): Paint {
         return Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -49,8 +49,12 @@ object RendererUtils {
             strokeWidth = style.strokeWidth * scale
 
             typeface = when (style.fontFamily.uppercase()) {
-                "MONO" -> Typeface.MONOSPACE
-                "DISPLAY" -> Typeface.create(Typeface.DEFAULT, parseFontWeight(style.fontWeight))
+                "MONO", "MONOSPACE" -> Typeface.MONOSPACE
+                "SERIF" -> Typeface.create(Typeface.SERIF, parseFontWeight(style.fontWeight))
+                "CYBER" -> Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+                "CURSIVE" -> Typeface.create("sans-serif-thin", Typeface.ITALIC)
+                "NEON" -> Typeface.create("sans-serif-light", Typeface.BOLD)
+                "DISPLAY" -> Typeface.create("sans-serif-medium", parseFontWeight(style.fontWeight))
                 else -> Typeface.create(Typeface.DEFAULT, parseFontWeight(style.fontWeight))
             }
 
