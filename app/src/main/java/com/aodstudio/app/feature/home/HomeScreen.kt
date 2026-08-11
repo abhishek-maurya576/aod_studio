@@ -29,44 +29,50 @@ import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.aodstudio.app.aod.renderer.AODRenderView
 import com.aodstudio.app.config.ThemeConfig
+import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.ui.theme.Primary
-import com.aodstudio.app.ui.theme.PrimaryVariant
 import com.aodstudio.app.ui.theme.Secondary
 import com.aodstudio.app.ui.theme.SurfaceVariant
 import com.aodstudio.app.ui.theme.Tertiary
 
 /**
- * Home screen — the main landing page of AOD Studio.
- *
- * Layout:
- *   - App header with branding
- *   - AOD preview card (shows current/last active theme)
- *   - Quick action buttons (Create, Themes, Settings)
- *   - Status indicator (AOD active/inactive)
+ * Home screen — main landing page of AOD Studio.
+ * Renders the actual active theme dynamically via AODRenderView with live system data.
  */
 @Composable
 fun HomeScreen(
+    viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToEditor: (String?) -> Unit = {},
     onNavigateToThemes: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadHomeData()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -96,7 +102,12 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XL.dp))
 
         // ─── AOD Preview Card ──────────────────────────────────────
-        AODPreviewCard()
+        AODPreviewCard(
+            activeTheme = uiState.activeTheme,
+            isLoading = uiState.isLoading,
+            viewModel = viewModel,
+            onClick = { onNavigateToEditor(uiState.activeTheme?.id) }
+        )
 
         Spacer(modifier = Modifier.height(ThemeConfig.Spacing.LG.dp))
 
@@ -131,87 +142,64 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(ThemeConfig.Spacing.LG.dp))
 
         // ─── Status Card ───────────────────────────────────────────
-        StatusCard(isAodActive = false, onNavigateToSettings = onNavigateToSettings)
+        StatusCard(
+            isAodActive = uiState.isAodActive,
+            onNavigateToSettings = onNavigateToSettings
+        )
 
         Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XL.dp))
     }
 }
 
 /**
- * Preview card that shows a miniature version of the active AOD theme.
- * Currently displays a placeholder clock design.
+ * Preview card that renders live AODRenderView with the active theme.
  */
 @Composable
-private fun AODPreviewCard() {
+private fun AODPreviewCard(
+    activeTheme: AODTheme?,
+    isLoading: Boolean,
+    viewModel: HomeViewModel,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(380.dp),
+            .height(380.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(ThemeConfig.Radius.XL.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Black
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = ThemeConfig.Elevation.MD.dp
-        )
+        colors = CardDefaults.cardColors(containerColor = Color.Black),
+        elevation = CardDefaults.cardElevation(defaultElevation = ThemeConfig.Elevation.MD.dp)
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Placeholder clock display
-                Text(
-                    text = "12:45",
-                    fontSize = 72.sp,
-                    fontWeight = FontWeight.Thin,
-                    color = Color.White,
-                    letterSpacing = 4.sp
-                )
-
-                Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XS.dp))
-
-                Text(
-                    text = "MON \u2022 AUG 10",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.6f),
-                    letterSpacing = 2.sp
-                )
-
-                Spacer(modifier = Modifier.height(ThemeConfig.Spacing.MD.dp))
-
-                // Battery indicator placeholder
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.radialGradient(
-                                    colors = listOf(Primary, PrimaryVariant)
-                                )
-                            )
-                    )
-                    Spacer(modifier = Modifier.width(ThemeConfig.Spacing.XS.dp))
-                    Text(
-                        text = "78%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Primary,
-                        fontWeight = FontWeight.Medium
+            if (isLoading) {
+                CircularProgressIndicator(color = Primary)
+            } else {
+                activeTheme?.let { theme ->
+                    AndroidView(
+                        factory = { context ->
+                            AODRenderView(context).apply {
+                                setBatteryRepository(viewModel.batteryRepository)
+                                setNotificationRepository(viewModel.notificationRepository)
+                                setMediaRepository(viewModel.mediaRepository)
+                                setTheme(theme)
+                            }
+                        },
+                        update = { renderView ->
+                            renderView.setTheme(theme)
+                        },
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
 
-            // Subtle corner label
+            // Corner label
             Text(
-                text = "Preview",
+                text = "Live Theme • Tap to Edit",
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.3f),
+                color = Color.White.copy(alpha = 0.5f),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(ThemeConfig.Spacing.MD.dp)
@@ -220,10 +208,6 @@ private fun AODPreviewCard() {
     }
 }
 
-/**
- * Quick action card with icon, label, and accent color.
- * Includes press animation for tactile feedback.
- */
 @Composable
 private fun QuickActionCard(
     modifier: Modifier = Modifier,
@@ -236,11 +220,7 @@ private fun QuickActionCard(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val backgroundColor by animateColorAsState(
-        targetValue = if (isPressed) {
-            accentColor.copy(alpha = 0.15f)
-        } else {
-            SurfaceVariant
-        },
+        targetValue = if (isPressed) accentColor.copy(alpha = 0.15f) else SurfaceVariant,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
         label = "card_bg"
     )
@@ -282,9 +262,6 @@ private fun QuickActionCard(
     }
 }
 
-/**
- * Status card showing whether the AOD service is currently active.
- */
 @Composable
 private fun StatusCard(isAodActive: Boolean, onNavigateToSettings: () -> Unit) {
     val statusColor = if (isAodActive) Tertiary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -302,7 +279,6 @@ private fun StatusCard(isAodActive: Boolean, onNavigateToSettings: () -> Unit) {
                 .padding(ThemeConfig.Spacing.MD.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Status dot
             Box(
                 modifier = Modifier
                     .size(10.dp)
