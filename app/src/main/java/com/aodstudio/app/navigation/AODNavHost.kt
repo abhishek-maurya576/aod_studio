@@ -30,6 +30,7 @@ import com.aodstudio.app.config.ThemeConfig
 import com.aodstudio.app.feature.editor.AODEditorScreen
 import com.aodstudio.app.feature.home.HomeScreen
 import com.aodstudio.app.feature.library.ThemeLibraryScreen
+import com.aodstudio.app.feature.preview.AODPreviewScreen
 import com.aodstudio.app.feature.settings.SettingsScreen
 
 /**
@@ -85,9 +86,8 @@ fun AODNavHost(
         // ─── Preview Destination ───────────────────────────────────
         composable<PreviewRoute> { backStackEntry ->
             val route = backStackEntry.toRoute<PreviewRoute>()
-            PlaceholderScreen(
-                title = "AOD Preview",
-                subtitle = "Previewing Theme: ${route.themeId}",
+            AODPreviewScreen(
+                themeId = route.themeId,
                 onBack = { navController.popBackStack() }
             )
         }
