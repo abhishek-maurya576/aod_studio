@@ -4,7 +4,8 @@ import java.util.Date
 
 /**
  * Live runtime state passed to element renderers during Canvas draw cycles.
- * Encapsulates system state (time, battery, notifications, media) and display state (burn-in offsets, scale).
+ * Uses uniform scaling (scaleFactor) and content offsets (contentOffsetX, contentOffsetY)
+ * to ensure themes maintain 100% exact visual proportions across all container aspect ratios.
  */
 data class RenderContext(
     val date: Date = Date(),
@@ -20,6 +21,11 @@ data class RenderContext(
     val burnInOffsetY: Float = 0f,
     val viewWidth: Int = 1080,
     val viewHeight: Int = 2400,
-    val scaleFactorX: Float = 1f,
-    val scaleFactorY: Float = 1f
-)
+    val scaleFactor: Float = 1f,
+    val contentOffsetX: Float = 0f,
+    val contentOffsetY: Float = 0f
+) {
+    // Backwards compatibility properties for sub-renderers
+    val scaleFactorX: Float get() = scaleFactor
+    val scaleFactorY: Float get() = scaleFactor
+}
