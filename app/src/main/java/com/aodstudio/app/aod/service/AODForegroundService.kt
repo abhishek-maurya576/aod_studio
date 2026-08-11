@@ -10,9 +10,11 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.aodstudio.app.aod.overlay.AODWindowOverlayManager
+import com.aodstudio.app.aod.sensor.PocketSensorManager
 import com.aodstudio.app.core.common.Result
 import com.aodstudio.app.domain.usecase.GetThemesUseCase
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,8 +27,9 @@ import javax.inject.Inject
 
 /**
  * Foreground Service for persistent Always-On Display activation.
- * Declared with foregroundServiceType="specialUse" (Android 14+ / Android 16 compatible).
- * Listens to screen off/on state broadcasts (ACTION_SCREEN_OFF / ACTION_SCREEN_ON / ACTION_USER_PRESENT).
+ * Manages screen off/on state lifecycle:
+ *   - Screen OFF (ACTION_SCREEN_OFF): Acquires WakeLock & shows custom AOD overlay.
+ *   - Screen ON / Unlocked (ACTION_SCREEN_ON / ACTION_USER_PRESENT): Releases WakeLock & hides overlay instantly.
  */
 @AndroidEntryPoint
 class AODForegroundService : Service() {
@@ -37,12 +40,18 @@ class AODForegroundService : Service() {
     @Inject
     lateinit var getThemesUseCase: GetThemesUseCase
 
+    @Inject
+    lateinit var pocketSensorManager: PocketSensorManager
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var wakeLock: PowerManager.WakeLock? = null
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 Intent.ACTION_SCREEN_OFF -> {
+                    Log.d(TAG, "ACTION_SCREEN_OFF — acquiring WakeLock & showing AOD overlay")
+                    acquireWakeLock()
                     serviceScope.launch {
                         val activeThemeResult = getThemesUseCase.getActiveTheme()
                         if (activeThemeResult is Result.Success) {
@@ -51,6 +60,8 @@ class AODForegroundService : Service() {
                     }
                 }
                 Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
+                    Log.d(TAG, "ACTION_SCREEN_ON / USER_PRESENT — releasing WakeLock & hiding AOD overlay")
+                    releaseWakeLock()
                     overlayManager.hideOverlay()
                 }
             }
@@ -62,6 +73,7 @@ class AODForegroundService : Service() {
         createNotificationChannel()
         startForegroundServiceNotification()
         registerScreenReceiver()
+        startPocketDetection()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -70,12 +82,45 @@ class AODForegroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        releaseWakeLock()
+        pocketSensorManager.stopListening()
         unregisterReceiver(screenReceiver)
         overlayManager.hideOverlay()
         serviceScope.cancel()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    @Suppress("DEPRECATION")
+    private fun acquireWakeLock() {
+        if (wakeLock == null) {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                "AODStudio:ScreenOffAODWakeLock"
+            )
+        }
+        if (wakeLock?.isHeld == false) {
+            wakeLock?.acquire(30 * 60 * 1000L)
+            Log.d(TAG, "WakeLock acquired")
+        }
+    }
+
+    private fun releaseWakeLock() {
+        if (wakeLock?.isHeld == true) {
+            wakeLock?.release()
+            Log.d(TAG, "WakeLock released")
+        }
+    }
+
+    private fun startPocketDetection() {
+        pocketSensorManager.startListening { isInPocket ->
+            if (isInPocket) {
+                Log.d(TAG, "Device in pocket — hiding AOD overlay")
+                overlayManager.hideOverlay()
+            }
+        }
+    }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -100,7 +145,6 @@ class AODForegroundService : Service() {
             .setOngoing(true)
             .build()
 
-        // Android 14+ requires explicit foreground service type
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(
                 NOTIFICATION_ID,
@@ -111,6 +155,20 @@ class AODForegroundService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
         Log.d(TAG, "Foreground service notification started")
+    }
+
+    private fun registerScreenReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            registerReceiver(screenReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screenReceiver, filter)
+        }
+        Log.d(TAG, "Screen state receiver registered")
     }
 
     companion object {
@@ -131,20 +189,5 @@ class AODForegroundService : Service() {
             val intent = Intent(context, AODForegroundService::class.java)
             context.stopService(intent)
         }
-    }
-
-    private fun registerScreenReceiver() {
-        val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_USER_PRESENT)
-        }
-        // Android 14+ requires explicit export flag for dynamic receivers
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            registerReceiver(screenReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(screenReceiver, filter)
-        }
-        Log.d(TAG, "Screen state receiver registered")
     }
 }
