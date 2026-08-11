@@ -11,16 +11,14 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Renderer for Analog Clock elements.
- * Renders clock face markers (ticks/dots/numbers), hour hand, minute hand,
- * and optional second hand with custom colors, lengths, and stroke thickness.
+ * Renderer for Analog Clock elements using uniform scale and coordinate transformation.
  */
 class AnalogClockElementRenderer : ElementRenderer {
 
     override fun render(canvas: Canvas, element: AODElement, context: RenderContext) {
-        val drawX = element.x * context.scaleFactorX
-        val drawY = element.y * context.scaleFactorY
-        val radius = (element.width / 2f) * context.scaleFactorX
+        val drawX = RendererUtils.getDrawX(element, context)
+        val drawY = RendererUtils.getDrawY(element, context)
+        val radius = (element.width / 2f) * context.scaleFactor
 
         val calendar = Calendar.getInstance().apply { time = context.date }
         val hours = calendar.get(Calendar.HOUR)
@@ -29,7 +27,7 @@ class AnalogClockElementRenderer : ElementRenderer {
 
         val showSeconds = element.properties[AODElement.PROP_SHOW_SECONDS] == "true"
         val showMarkers = element.properties["showMarkers"] != "false"
-        val markerType = element.properties["markerType"] ?: "TICKS" // TICKS, DOTS, NUMBERS
+        val markerType = element.properties["markerType"] ?: "TICKS"
 
         // 1. Draw Markers / Ticks
         if (showMarkers) {
@@ -37,11 +35,11 @@ class AnalogClockElementRenderer : ElementRenderer {
         }
 
         // 2. Draw Hour Hand
-        val hourAngle = (hours + minutes / 60f) * 30f // 360° / 12 = 30° per hour
+        val hourAngle = (hours + minutes / 60f) * 30f
         drawHand(canvas, drawX, drawY, radius * 0.5f, hourAngle, element.style.color, element.style.strokeWidth * 1.5f, context)
 
         // 3. Draw Minute Hand
-        val minuteAngle = (minutes + seconds / 60f) * 6f // 360° / 60 = 6° per minute
+        val minuteAngle = (minutes + seconds / 60f) * 6f
         drawHand(canvas, drawX, drawY, radius * 0.75f, minuteAngle, element.style.accentColor, element.style.strokeWidth, context)
 
         // 4. Draw Second Hand (if enabled)
@@ -56,7 +54,7 @@ class AnalogClockElementRenderer : ElementRenderer {
             style = Paint.Style.FILL
             alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
         }
-        canvas.drawCircle(drawX, drawY, 6f * context.scaleFactorX, pinPaint)
+        canvas.drawCircle(drawX, drawY, 6f * context.scaleFactor, pinPaint)
     }
 
     private fun drawClockMarkers(
@@ -71,7 +69,7 @@ class AnalogClockElementRenderer : ElementRenderer {
         val markerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = RendererUtils.parseColor(element.style.color)
             style = Paint.Style.STROKE
-            strokeWidth = element.style.strokeWidth * context.scaleFactorX * 0.5f
+            strokeWidth = element.style.strokeWidth * context.scaleFactor * 0.5f
             alpha = (element.opacity * 200).toInt().coerceIn(0, 255)
         }
 
@@ -87,7 +85,7 @@ class AnalogClockElementRenderer : ElementRenderer {
 
             if (type.uppercase() == "DOTS") {
                 markerPaint.style = Paint.Style.FILL
-                canvas.drawCircle(endX, endY, 3f * context.scaleFactorX, markerPaint)
+                canvas.drawCircle(endX, endY, 3f * context.scaleFactor, markerPaint)
             } else {
                 canvas.drawLine(startX, startY, endX, endY, markerPaint)
             }
@@ -108,7 +106,7 @@ class AnalogClockElementRenderer : ElementRenderer {
             color = RendererUtils.parseColor(colorHex)
             style = Paint.Style.STROKE
             strokeCap = Paint.Cap.ROUND
-            strokeWidth = thickness * context.scaleFactorX
+            strokeWidth = thickness * context.scaleFactor
         }
 
         val angleRad = Math.toRadians((angleDeg - 90).toDouble()).toFloat()

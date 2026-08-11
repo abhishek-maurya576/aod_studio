@@ -13,16 +13,14 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Renderer for Radial and Orbit Clock styles.
- * Renders concentric orbital tracks, hour/minute orbital dots,
- * and central orbital digital time (`○ 12 : 45`).
+ * Renderer for Radial and Orbit Clock styles using uniform scale and coordinate transformation.
  */
 class RadialClockElementRenderer : ElementRenderer {
 
     override fun render(canvas: Canvas, element: AODElement, context: RenderContext) {
-        val drawX = element.x * context.scaleFactorX
-        val drawY = element.y * context.scaleFactorY
-        val radius = (element.width / 2f) * context.scaleFactorX
+        val drawX = RendererUtils.getDrawX(element, context)
+        val drawY = RendererUtils.getDrawY(element, context)
+        val radius = (element.width / 2f) * context.scaleFactor
 
         val calendar = Calendar.getInstance().apply { time = context.date }
         val hours = calendar.get(Calendar.HOUR)
@@ -33,7 +31,7 @@ class RadialClockElementRenderer : ElementRenderer {
         val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = RendererUtils.parseColor(element.style.color)
             style = Paint.Style.STROKE
-            strokeWidth = element.style.strokeWidth * context.scaleFactorX * 0.5f
+            strokeWidth = element.style.strokeWidth * context.scaleFactor * 0.5f
             alpha = (element.opacity * 100).toInt().coerceIn(0, 255)
         }
         canvas.drawCircle(drawX, drawY, radius, trackPaint)
@@ -48,14 +46,14 @@ class RadialClockElementRenderer : ElementRenderer {
             style = Paint.Style.FILL
             alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
         }
-        canvas.drawCircle(hourDotX, hourDotY, 8f * context.scaleFactorX, hourDotPaint)
+        canvas.drawCircle(hourDotX, hourDotY, 8f * context.scaleFactor, hourDotPaint)
 
         // 3. Draw Minute Orbit Arc
         val minuteSweep = (minutes / 60f) * 360f
         val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = RendererUtils.parseColor(element.style.accentColor)
             style = Paint.Style.STROKE
-            strokeWidth = element.style.strokeWidth * context.scaleFactorX
+            strokeWidth = element.style.strokeWidth * context.scaleFactor
             strokeCap = Paint.Cap.ROUND
             alpha = (element.opacity * 220).toInt().coerceIn(0, 255)
         }
@@ -64,8 +62,8 @@ class RadialClockElementRenderer : ElementRenderer {
 
         // 4. Center Digital Time Display
         val timeString = formatTime("HH:mm", context.date)
-        val textPaint = RendererUtils.createTextPaint(element.style, context.scaleFactorX).apply {
-            textSize = element.style.fontSize * 0.5f * context.scaleFactorX
+        val textPaint = RendererUtils.createTextPaint(element.style, context.scaleFactor).apply {
+            textSize = element.style.fontSize * 0.5f * context.scaleFactor
             alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
         }
         canvas.drawText("○ $timeString", drawX, drawY + textPaint.textSize * 0.35f, textPaint)

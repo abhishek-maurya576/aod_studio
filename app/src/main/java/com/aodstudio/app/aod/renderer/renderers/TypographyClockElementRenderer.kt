@@ -18,17 +18,17 @@ class TypographyClockElementRenderer : ElementRenderer {
         val hours = formatTime("HH", context.date)
         val minutes = formatTime("mm", context.date)
 
-        val paintHours = RendererUtils.createTextPaint(element.style, context.scaleFactorX)
+        val paintHours = RendererUtils.createTextPaint(element.style, context.scaleFactor)
         paintHours.alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
 
-        val paintMinutes = RendererUtils.createTextPaint(element.style, context.scaleFactorX).apply {
+        val paintMinutes = RendererUtils.createTextPaint(element.style, context.scaleFactor).apply {
             color = RendererUtils.parseColor(element.style.accentColor)
             alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
         }
 
-        val drawX = element.x * context.scaleFactorX
-        val drawY = element.y * context.scaleFactorY
-        val fontSpacing = (element.style.fontSize * 0.9f) * context.scaleFactorY
+        val drawX = RendererUtils.getDrawX(element, context)
+        val drawY = RendererUtils.getDrawY(element, context)
+        val fontSpacing = (element.style.fontSize * 0.9f) * context.scaleFactor
 
         // Top line: Hours
         canvas.drawText(hours, drawX, drawY - fontSpacing * 0.4f, paintHours)

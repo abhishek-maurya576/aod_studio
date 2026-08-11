@@ -3,10 +3,11 @@ package com.aodstudio.app.aod.renderer
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
+import com.aodstudio.app.domain.model.AODElement
 import com.aodstudio.app.domain.model.AODStyle
 
 /**
- * Utility functions for Canvas painting, color parsing, and typography.
+ * Utility functions for Canvas painting, color parsing, typography, and uniform coordinate transformation.
  */
 object RendererUtils {
 
@@ -23,7 +24,23 @@ object RendererUtils {
     }
 
     /**
-     * Creates and configures an Android Paint instance based on AODStyle properties.
+     * Calculates final transformed screen X coordinate applying uniform scale factor,
+     * content offset, and burn-in offset.
+     */
+    fun getDrawX(element: AODElement, context: RenderContext): Float {
+        return context.contentOffsetX + (element.x + context.burnInOffsetX) * context.scaleFactor
+    }
+
+    /**
+     * Calculates final transformed screen Y coordinate applying uniform scale factor,
+     * content offset, and burn-in offset.
+     */
+    fun getDrawY(element: AODElement, context: RenderContext): Float {
+        return context.contentOffsetY + (element.y + context.burnInOffsetY) * context.scaleFactor
+    }
+
+    /**
+     * Creates and configures an Android Paint instance based on AODStyle properties using uniform scaleFactor.
      */
     fun createTextPaint(style: AODStyle, scale: Float = 1f): Paint {
         return Paint(Paint.ANTI_ALIAS_FLAG).apply {

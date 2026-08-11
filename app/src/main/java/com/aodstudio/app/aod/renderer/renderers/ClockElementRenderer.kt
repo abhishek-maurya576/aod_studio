@@ -17,11 +17,11 @@ class ClockElementRenderer : ElementRenderer {
         val format = element.properties[AODElement.PROP_FORMAT] ?: "HH:mm"
         val timeString = formatTime(format, context.date)
 
-        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactorX)
+        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactor)
         paint.alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
 
-        val drawX = element.x * context.scaleFactorX
-        val drawY = element.y * context.scaleFactorY
+        val drawX = RendererUtils.getDrawX(element, context)
+        val drawY = RendererUtils.getDrawY(element, context)
 
         canvas.drawText(timeString, drawX, drawY, paint)
     }

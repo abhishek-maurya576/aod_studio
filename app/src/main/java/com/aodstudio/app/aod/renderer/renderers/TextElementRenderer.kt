@@ -16,11 +16,11 @@ class TextElementRenderer : ElementRenderer {
         val textContent = element.properties[AODElement.PROP_TEXT]
             ?: element.name.ifBlank { "Text" }
 
-        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactorX)
+        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactor)
         paint.alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
 
-        val drawX = element.x * context.scaleFactorX
-        val drawY = element.y * context.scaleFactorY
+        val drawX = RendererUtils.getDrawX(element, context)
+        val drawY = RendererUtils.getDrawY(element, context)
 
         canvas.drawText(textContent, drawX, drawY, paint)
     }

@@ -16,11 +16,11 @@ class NotificationElementRenderer : ElementRenderer {
         if (context.notificationCount <= 0) return
 
         val textContent = "🔔 ${context.notificationCount}"
-        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactorX)
+        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactor)
         paint.alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
 
-        val drawX = element.x * context.scaleFactorX
-        val drawY = element.y * context.scaleFactorY
+        val drawX = RendererUtils.getDrawX(element, context)
+        val drawY = RendererUtils.getDrawY(element, context)
 
         canvas.drawText(textContent, drawX, drawY, paint)
     }

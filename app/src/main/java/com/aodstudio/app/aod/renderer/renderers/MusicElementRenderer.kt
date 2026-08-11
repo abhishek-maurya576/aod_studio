@@ -7,8 +7,7 @@ import com.aodstudio.app.aod.renderer.RendererUtils
 import com.aodstudio.app.domain.model.AODElement
 
 /**
- * Renderer for MUSIC type elements.
- * Displays currently playing music track title, artist, and play state.
+ * Renderer for MUSIC type elements using uniform scale and coordinate transformation.
  */
 class MusicElementRenderer : ElementRenderer {
 
@@ -19,11 +18,11 @@ class MusicElementRenderer : ElementRenderer {
         val playSymbol = if (context.mediaIsPlaying) "🎵 " else "⏸ "
         val displayString = if (artist.isBlank()) "$playSymbol$title" else "$playSymbol$title - $artist"
 
-        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactorX)
+        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactor)
         paint.alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
 
-        val drawX = element.x * context.scaleFactorX
-        val drawY = element.y * context.scaleFactorY
+        val drawX = RendererUtils.getDrawX(element, context)
+        val drawY = RendererUtils.getDrawY(element, context)
 
         canvas.drawText(displayString, drawX, drawY, paint)
     }

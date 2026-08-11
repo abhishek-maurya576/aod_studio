@@ -17,11 +17,11 @@ class DateElementRenderer : ElementRenderer {
         val format = element.properties[AODElement.PROP_FORMAT] ?: "EEE • MMM dd"
         val dateString = formatDate(format, context.date)
 
-        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactorX)
+        val paint = RendererUtils.createTextPaint(element.style, context.scaleFactor)
         paint.alpha = (element.opacity * 255).toInt().coerceIn(0, 255)
 
-        val drawX = element.x * context.scaleFactorX
-        val drawY = element.y * context.scaleFactorY
+        val drawX = RendererUtils.getDrawX(element, context)
+        val drawY = RendererUtils.getDrawY(element, context)
 
         canvas.drawText(dateString, drawX, drawY, paint)
     }
