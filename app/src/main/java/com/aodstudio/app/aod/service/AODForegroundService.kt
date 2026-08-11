@@ -7,8 +7,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.aodstudio.app.aod.overlay.AODWindowOverlayManager
 import com.aodstudio.app.core.common.Result
@@ -98,10 +100,21 @@ class AODForegroundService : Service() {
             .setOngoing(true)
             .build()
 
-        startForeground(NOTIFICATION_ID, notification)
+        // Android 14+ requires explicit foreground service type
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+        Log.d(TAG, "Foreground service notification started")
     }
 
     companion object {
+        private const val TAG = "AODForegroundService"
         const val CHANNEL_ID = "aod_service_channel"
         const val NOTIFICATION_ID = 1001
 
@@ -126,6 +139,12 @@ class AODForegroundService : Service() {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
         }
-        registerReceiver(screenReceiver, filter)
+        // Android 14+ requires explicit export flag for dynamic receivers
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            registerReceiver(screenReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screenReceiver, filter)
+        }
+        Log.d(TAG, "Screen state receiver registered")
     }
 }
