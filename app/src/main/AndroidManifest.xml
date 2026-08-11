@@ -8,6 +8,7 @@
 
     <!-- Required for AOD overlay (requested at runtime when user enables AOD) -->
     <!-- SYSTEM_ALERT_WINDOW is a special permission — granted via Settings, not runtime dialog -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Foreground service — keeps AOD alive while screen is off -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
