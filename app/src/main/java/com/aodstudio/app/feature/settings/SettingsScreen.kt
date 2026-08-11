@@ -9,10 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Layers
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,8 +55,10 @@ import com.aodstudio.app.ui.theme.SurfaceVariant
 import com.aodstudio.app.ui.theme.Tertiary
 
 /**
- * Settings Screen — permission management (Overlay, Notification Listener), master AOD toggle,
- * burn-in shift frequency, and OriginOS 6 Vivo optimization options.
+ * Settings Screen — master AOD toggle, permission management, battery optimization,
+ * and notification listener configuration.
+ *
+ * All permissions required for AOD are visible here with status + grant buttons.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +70,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Re-check permissions every time the screen becomes visible
     LaunchedEffect(Unit) {
         viewModel.checkPermissions()
     }
@@ -104,11 +114,14 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(ThemeConfig.Spacing.MD.dp)
+                .padding(horizontal = ThemeConfig.Spacing.MD.dp)
+                .verticalScroll(rememberScrollState())
                 .background(MaterialTheme.colorScheme.background),
             verticalArrangement = Arrangement.spacedBy(ThemeConfig.Spacing.SM.dp)
         ) {
-            // Master Service Switch Card
+            Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XS.dp))
+
+            // ─── Master Service Toggle ─────────────────────────────
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(ThemeConfig.Radius.MD.dp),
@@ -123,15 +136,20 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Always-On Display Service",
+                            text = "Always-On Display",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = if (uiState.isAodEnabled) "Service is running in background" else "Tap switch to activate AOD overlay",
+                            text = when {
+                                uiState.isServiceActuallyRunning -> "Service is running"
+                                uiState.isAodEnabled -> "Enabling..."
+                                else -> "Tap to activate AOD overlay"
+                            },
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (uiState.isServiceActuallyRunning) Tertiary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -146,9 +164,9 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(ThemeConfig.Spacing.SM.dp))
+            Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XS.dp))
 
-            // Permissions Card
+            // ─── Required Permissions Section ──────────────────────
             Text(
                 text = "REQUIRED PERMISSIONS",
                 style = MaterialTheme.typography.labelMedium,
@@ -156,47 +174,96 @@ fun SettingsScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(ThemeConfig.Radius.MD.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfaceVariant)
-            ) {
-                Column(modifier = Modifier.padding(ThemeConfig.Spacing.MD.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = if (uiState.hasOverlayPermission) Icons.Outlined.CheckCircle else Icons.Outlined.Warning,
-                                contentDescription = null,
-                                tint = if (uiState.hasOverlayPermission) Tertiary else Secondary
-                            )
-                            Spacer(modifier = Modifier.padding(start = 8.dp))
-                            Column {
-                                Text(
-                                    text = "System Overlay Permission",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = if (uiState.hasOverlayPermission) "Granted" else "Required to display AOD screen",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+            // 1. System Overlay Permission
+            PermissionCard(
+                icon = Icons.Outlined.Layers,
+                title = "System Overlay",
+                description = if (uiState.hasOverlayPermission) "Granted — AOD can draw over lock screen"
+                              else "Required to display AOD on lock screen",
+                isGranted = uiState.hasOverlayPermission,
+                onGrant = { context.startActivity(viewModel.openOverlaySettingsIntent()) }
+            )
 
-                        if (!uiState.hasOverlayPermission) {
-                            Button(
-                                onClick = { context.startActivity(viewModel.openOverlaySettingsIntent()) },
-                                colors = ButtonDefaults.buttonColors(containerColor = Primary)
-                            ) {
-                                Text("Grant", color = MaterialTheme.colorScheme.onPrimary)
-                            }
-                        }
-                    }
+            // 2. Notification Listener Permission
+            PermissionCard(
+                icon = Icons.Outlined.Notifications,
+                title = "Notification Access",
+                description = if (uiState.hasNotificationPermission) "Granted — notifications visible on AOD"
+                              else "Required to show notification icons on AOD",
+                isGranted = uiState.hasNotificationPermission,
+                onGrant = { context.startActivity(viewModel.openNotificationListenerSettingsIntent()) }
+            )
+
+            // 3. Battery Optimization Exemption
+            PermissionCard(
+                icon = Icons.Outlined.BatteryChargingFull,
+                title = "Battery Unrestricted",
+                description = if (uiState.isBatteryOptimizationExempt) "Granted — service won't be killed"
+                              else "Prevents system from killing AOD service",
+                isGranted = uiState.isBatteryOptimizationExempt,
+                onGrant = { context.startActivity(viewModel.openBatteryOptimizationIntent()) }
+            )
+
+            Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XL.dp))
+        }
+    }
+}
+
+/**
+ * Reusable permission status card with icon, title, description, and grant button.
+ */
+@Composable
+private fun PermissionCard(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    isGranted: Boolean,
+    onGrant: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(ThemeConfig.Radius.MD.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ThemeConfig.Spacing.MD.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = if (isGranted) Icons.Outlined.CheckCircle else icon,
+                    contentDescription = null,
+                    tint = if (isGranted) Tertiary else Secondary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.padding(start = ThemeConfig.Spacing.SM.dp))
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (!isGranted) {
+                Button(
+                    onClick = onGrant,
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                ) {
+                    Text("Grant", color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }
