@@ -25,7 +25,7 @@ data class AODTheme(
         const val META_MODIFIED_AT = "modifiedAt"
 
         /**
-         * Creates a minimal default clock theme.
+         * Creates a minimal default clock theme with proper non-overlapping Y coordinates.
          */
         fun createDefaultTheme(name: String = "Minimal Orbit"): AODTheme {
             val clockElement = AODElement(
@@ -33,7 +33,7 @@ data class AODTheme(
                 name = "Digital Clock",
                 type = AODElementType.CLOCK,
                 x = 540f,
-                y = 900f,
+                y = 850f,
                 width = 500f,
                 height = 200f,
                 style = AODStyle(fontSize = 72f, fontWeight = "THIN"),
@@ -45,28 +45,39 @@ data class AODTheme(
                 name = "Date Display",
                 type = AODElementType.DATE,
                 x = 540f,
-                y = 1050f,
+                y = 1000f,
                 width = 400f,
                 height = 50f,
-                style = AODStyle(fontSize = 16f, fontWeight = "MEDIUM", color = "#99FFFFFF"),
+                style = AODStyle(fontSize = 18f, fontWeight = "MEDIUM", color = "#99FFFFFF"),
                 properties = mapOf(AODElement.PROP_FORMAT to "EEE • MMM dd")
             )
 
             val batteryElement = AODElement(
                 id = generateId(),
-                name = "Battery Display",
+                name = "Battery Status",
                 type = AODElementType.BATTERY,
                 x = 540f,
-                y = 1150f,
+                y = 1100f,
                 width = 200f,
                 height = 40f,
                 style = AODStyle(fontSize = 14f, color = "#E8A838"),
                 properties = mapOf(AODElement.PROP_BATTERY_STYLE to "PERCENTAGE")
             )
 
+            val notificationElement = AODElement(
+                id = generateId(),
+                name = "Notifications",
+                type = AODElementType.NOTIFICATION,
+                x = 540f,
+                y = 1180f,
+                width = 200f,
+                height = 40f,
+                style = AODStyle(fontSize = 16f, color = "#E8A838")
+            )
+
             return AODTheme(
                 name = name,
-                elements = listOf(clockElement, dateElement, batteryElement),
+                elements = listOf(clockElement, dateElement, batteryElement, notificationElement),
                 metadata = mapOf(
                     META_AUTHOR to "AOD Studio",
                     META_DESCRIPTION to "Minimalist default clock theme",

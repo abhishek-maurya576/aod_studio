@@ -178,11 +178,21 @@ class AODEditorViewModel @Inject constructor(
 
     fun addElement(type: AODElementType) {
         val currentTheme = _uiState.value.theme ?: return
+        val defaultY = when (type) {
+            AODElementType.CLOCK -> 850f
+            AODElementType.DATE -> 1000f
+            AODElementType.BATTERY -> 1100f
+            AODElementType.NOTIFICATION -> 1180f
+            AODElementType.MUSIC -> 1260f
+            else -> 1340f
+        }
+        val defaultFontSize = if (type == AODElementType.NOTIFICATION) 16f else 24f
         val newElem = AODElement(
             type = type,
             name = type.name.lowercase().replaceFirstChar { it.uppercase() },
             x = 540f,
-            y = 1200f
+            y = defaultY,
+            style = com.aodstudio.app.domain.model.AODStyle(fontSize = defaultFontSize)
         )
         val updatedElements = currentTheme.elements + newElem
         _uiState.update {
