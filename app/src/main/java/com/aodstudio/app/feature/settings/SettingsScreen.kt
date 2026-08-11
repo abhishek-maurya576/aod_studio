@@ -19,7 +19,9 @@ import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -56,9 +58,7 @@ import com.aodstudio.app.ui.theme.Tertiary
 
 /**
  * Settings Screen — master AOD toggle, permission management, battery optimization,
- * and notification listener configuration.
- *
- * All permissions required for AOD are visible here with status + grant buttons.
+ * hardware pocket detection, OLED burn-in protection, and double-tap overlay exit.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +70,6 @@ fun SettingsScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Re-check permissions every time the screen becomes visible
     LaunchedEffect(Unit) {
         viewModel.checkPermissions()
     }
@@ -121,6 +120,56 @@ fun SettingsScreen(
         ) {
             Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XS.dp))
 
+            // ─── Pro Upgrade Banner ────────────────────────────────
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(ThemeConfig.Radius.MD.dp),
+                colors = CardDefaults.cardColors(containerColor = Primary.copy(alpha = 0.15f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(ThemeConfig.Spacing.MD.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Star,
+                            contentDescription = "Pro",
+                            tint = Primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.padding(start = ThemeConfig.Spacing.SM.dp))
+                        Column {
+                            Text(
+                                text = "AOD Studio Pro",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Primary
+                            )
+                            Text(
+                                text = "Unlock premium themes & advanced animations",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = { /* Pro Trigger */ },
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) {
+                        Text("Upgrade", color = MaterialTheme.colorScheme.onPrimary)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XS.dp))
+
             // ─── Master Service Toggle ─────────────────────────────
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -149,7 +198,7 @@ fun SettingsScreen(
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = if (uiState.isServiceActuallyRunning) Tertiary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -166,6 +215,43 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XS.dp))
 
+            // ─── Hardware & Behavior Settings ──────────────────────
+            Text(
+                text = "HARDWARE & BEHAVIOR",
+                style = MaterialTheme.typography.labelMedium,
+                color = Primary,
+                fontWeight = FontWeight.Bold
+            )
+
+            // Pocket Detection Toggle
+            SettingToggleCard(
+                icon = Icons.Outlined.Security,
+                title = "Enable Pocket Detection",
+                subtitle = "Turns off AOD screen using proximity sensor when in a pocket",
+                isChecked = uiState.pocketDetectionEnabled,
+                onCheckedChange = { viewModel.togglePocketDetection(it) }
+            )
+
+            // OLED Burn-In Protection Toggle
+            SettingToggleCard(
+                icon = Icons.Outlined.Shield,
+                title = "OLED Burn-In Protection",
+                subtitle = "Periodically shifts pixel coordinates to prevent subpixel burn-in",
+                isChecked = uiState.burnInProtectionEnabled,
+                onCheckedChange = { viewModel.toggleBurnInProtection(it) }
+            )
+
+            // Double Tap to Exit Toggle
+            SettingToggleCard(
+                icon = Icons.Outlined.Layers,
+                title = "Double Tap to Exit",
+                subtitle = "Double tap anywhere on AOD screen to dismiss overlay",
+                isChecked = uiState.doubleTapToExit,
+                onCheckedChange = { viewModel.toggleDoubleTapToExit(it) }
+            )
+
+            Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XS.dp))
+
             // ─── Required Permissions Section ──────────────────────
             Text(
                 text = "REQUIRED PERMISSIONS",
@@ -179,7 +265,7 @@ fun SettingsScreen(
                 icon = Icons.Outlined.Layers,
                 title = "System Overlay",
                 description = if (uiState.hasOverlayPermission) "Granted — AOD can draw over lock screen"
-                              else "Required to display AOD on lock screen",
+                else "Required to display AOD on lock screen",
                 isGranted = uiState.hasOverlayPermission,
                 onGrant = { context.startActivity(viewModel.openOverlaySettingsIntent()) }
             )
@@ -189,7 +275,7 @@ fun SettingsScreen(
                 icon = Icons.Outlined.Notifications,
                 title = "Notification Access",
                 description = if (uiState.hasNotificationPermission) "Granted — notifications visible on AOD"
-                              else "Required to show notification icons on AOD",
+                else "Required to show notification icons on AOD",
                 isGranted = uiState.hasNotificationPermission,
                 onGrant = { context.startActivity(viewModel.openNotificationListenerSettingsIntent()) }
             )
@@ -199,7 +285,7 @@ fun SettingsScreen(
                 icon = Icons.Outlined.BatteryChargingFull,
                 title = "Battery Unrestricted",
                 description = if (uiState.isBatteryOptimizationExempt) "Granted — service won't be killed"
-                              else "Prevents system from killing AOD service",
+                else "Prevents system from killing AOD service",
                 isGranted = uiState.isBatteryOptimizationExempt,
                 onGrant = { context.startActivity(viewModel.openBatteryOptimizationIntent()) }
             )
@@ -209,9 +295,64 @@ fun SettingsScreen(
     }
 }
 
-/**
- * Reusable permission status card with icon, title, description, and grant button.
- */
+@Composable
+private fun SettingToggleCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(ThemeConfig.Radius.MD.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ThemeConfig.Spacing.MD.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Secondary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.padding(start = ThemeConfig.Spacing.SM.dp))
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Switch(
+                checked = isChecked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Primary,
+                    checkedTrackColor = Primary.copy(alpha = 0.3f)
+                )
+            )
+        }
+    }
+}
+
 @Composable
 private fun PermissionCard(
     icon: ImageVector,
