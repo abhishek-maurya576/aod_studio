@@ -18,7 +18,7 @@ import javax.inject.Inject
 
 /**
  * ViewModel for the AOD Editor screen.
- * Manages loading theme, selecting elements, updating positions/styles, adding/deleting elements, and saving changes.
+ * Manages loading theme, selecting elements, updating positions/styles, adding/deleting elements, and saving & applying changes.
  */
 @HiltViewModel
 class AODEditorViewModel @Inject constructor(
@@ -187,9 +187,13 @@ class AODEditorViewModel @Inject constructor(
             else -> 1340f
         }
         val defaultFontSize = if (type == AODElementType.NOTIFICATION) 16f else 24f
+        val existingCount = currentTheme.elements.count { it.type == type }
+        val baseName = type.name.lowercase().replaceFirstChar { it.uppercase() }
+        val newName = if (existingCount > 0) "$baseName ${existingCount + 1}" else baseName
+
         val newElem = AODElement(
             type = type,
-            name = type.name.lowercase().replaceFirstChar { it.uppercase() },
+            name = newName,
             x = 540f,
             y = defaultY,
             style = com.aodstudio.app.domain.model.AODStyle(fontSize = defaultFontSize)
@@ -228,11 +232,12 @@ class AODEditorViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true) }
             when (val result = saveThemeUseCase.execute(currentTheme)) {
                 is Result.Success -> {
+                    saveThemeUseCase.setActive(currentTheme.id)
                     _uiState.update {
                         it.copy(
                             isSaving = false,
                             isDirty = false,
-                            userMessage = "Theme saved successfully"
+                            userMessage = "Theme saved and applied to AOD!"
                         )
                     }
                 }
