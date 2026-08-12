@@ -27,11 +27,15 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val vivoAdapter: VivoAdapter
+    private val vivoAdapter: VivoAdapter,
+    private val settingsRepository: com.aodstudio.app.domain.repository.SettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
-        SettingsUiState(isVivoDevice = vivoAdapter.isVivoDevice)
+        SettingsUiState(
+            isVivoDevice = vivoAdapter.isVivoDevice,
+            doubleTapToExit = settingsRepository.getDoubleTapToExitSync()
+        )
     )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
@@ -96,6 +100,7 @@ class SettingsViewModel @Inject constructor(
     // ──────────────────────────────────────────────────────────────────────────
 
     fun toggleDoubleTapToExit(enabled: Boolean) {
+        settingsRepository.setDoubleTapToExit(enabled)
         _uiState.update { it.copy(doubleTapToExit = enabled) }
     }
 

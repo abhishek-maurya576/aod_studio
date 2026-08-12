@@ -56,6 +56,9 @@ class AODActivity : ComponentActivity() {
     @Inject
     lateinit var mediaRepository: MediaRepository
 
+    @Inject
+    lateinit var settingsRepository: com.aodstudio.app.domain.repository.SettingsRepository
+
     private var renderView: AODRenderView? = null
 
     private val userPresentReceiver = object : BroadcastReceiver() {
@@ -74,10 +77,19 @@ class AODActivity : ComponentActivity() {
         val gestureDetector = GestureDetector(
             this,
             object : GestureDetector.SimpleOnGestureListener() {
-                override fun onDoubleTap(e: MotionEvent): Boolean {
-                    Log.d(TAG, "Double-tap detected on AODActivity — dismissing")
-                    dismissAod()
+                override fun onDown(e: MotionEvent): Boolean {
                     return true
+                }
+
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    return if (settingsRepository.getDoubleTapToExitSync()) {
+                        Log.d(TAG, "Double-tap detected on AODActivity — dismissing (setting enabled)")
+                        dismissAod()
+                        true
+                    } else {
+                        Log.d(TAG, "Double-tap detected on AODActivity — ignored (setting disabled)")
+                        false
+                    }
                 }
             }
         )
@@ -93,6 +105,7 @@ class AODActivity : ComponentActivity() {
                     true
                 } else {
                     gestureDetector.onTouchEvent(event)
+                    true
                 }
             }
         }

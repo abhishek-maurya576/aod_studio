@@ -45,7 +45,8 @@ class AODWindowOverlayManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val batteryRepository: BatteryRepository,
     private val notificationRepository: NotificationRepository,
-    private val mediaRepository: MediaRepository
+    private val mediaRepository: MediaRepository,
+    private val settingsRepository: com.aodstudio.app.domain.repository.SettingsRepository
 ) {
     companion object {
         private const val TAG = "AODOverlayManager"
@@ -85,10 +86,19 @@ class AODWindowOverlayManager @Inject constructor(
             val gestureDetector = GestureDetector(
                 context,
                 object : GestureDetector.SimpleOnGestureListener() {
-                    override fun onDoubleTap(e: MotionEvent): Boolean {
-                        Log.d(TAG, "Double-tap detected — dismissing AOD overlay")
-                        hideOverlay()
+                    override fun onDown(e: MotionEvent): Boolean {
                         return true
+                    }
+
+                    override fun onDoubleTap(e: MotionEvent): Boolean {
+                        return if (settingsRepository.getDoubleTapToExitSync()) {
+                            Log.d(TAG, "Double-tap detected — dismissing AOD overlay (setting enabled)")
+                            hideOverlay()
+                            true
+                        } else {
+                            Log.d(TAG, "Double-tap detected — ignored (setting disabled)")
+                            false
+                        }
                     }
                 }
             )
@@ -107,6 +117,7 @@ class AODWindowOverlayManager @Inject constructor(
                         true
                     } else {
                         gestureDetector.onTouchEvent(event)
+                        true
                     }
                 }
             }

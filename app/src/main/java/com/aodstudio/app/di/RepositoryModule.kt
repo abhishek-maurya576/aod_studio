@@ -44,4 +44,10 @@ abstract class RepositoryModule {
     abstract fun bindMediaRepository(
         impl: MediaRepositoryImpl
     ): MediaRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSettingsRepository(
+        impl: com.aodstudio.app.data.repository.SettingsRepositoryImpl
+    ): com.aodstudio.app.domain.repository.SettingsRepository
 }
