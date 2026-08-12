@@ -30,6 +30,7 @@ import com.aodstudio.app.config.ThemeConfig
 import com.aodstudio.app.feature.editor.AODEditorScreen
 import com.aodstudio.app.feature.home.HomeScreen
 import com.aodstudio.app.feature.library.ThemeLibraryScreen
+import com.aodstudio.app.feature.onboarding.VivoOnboardingScreen
 import com.aodstudio.app.feature.preview.AODPreviewScreen
 import com.aodstudio.app.feature.settings.SettingsScreen
 
@@ -96,6 +97,14 @@ fun AODNavHost(
         composable<SettingsRoute> {
             SettingsScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        // ─── Vivo Onboarding Destination ──────────────────────────────
+        // Shown on first launch for Vivo/OriginOS devices.
+        composable<OnboardingRoute> {
+            VivoOnboardingScreen(
+                onFinish = { navController.popBackStack() }
             )
         }
     }

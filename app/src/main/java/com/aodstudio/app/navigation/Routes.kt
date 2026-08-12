@@ -25,3 +25,9 @@ data class EditorRoute(val themeId: String? = null)
 
 @Serializable
 data class PreviewRoute(val themeId: String)
+
+// ─── Onboarding ─────────────────────────────────────────────────────
+// Shown on first launch for Vivo/OriginOS devices to configure survival settings.
+
+@Serializable
+object OnboardingRoute
