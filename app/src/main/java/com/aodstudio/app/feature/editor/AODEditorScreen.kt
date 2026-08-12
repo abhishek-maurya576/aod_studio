@@ -176,18 +176,7 @@ fun AODEditorScreen(
                     modifier = Modifier
                         .weight(0.45f)
                         .fillMaxWidth()
-                        .background(Color.Black)
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onPress = {
-                                    val released = tryAwaitRelease()
-                                    isFullPreviewActive = false
-                                },
-                                onLongPress = {
-                                    isFullPreviewActive = true
-                                }
-                            )
-                        },
+                        .background(Color.Black),
                     contentAlignment = Alignment.Center
                 ) {
                     if (uiState.isLoading) {
@@ -197,10 +186,12 @@ fun AODEditorScreen(
                             AndroidView(
                                 factory = { context ->
                                     AODRenderView(context).apply {
+                                        setMediaRepository(viewModel.mediaRepository)
                                         setTheme(currentTheme)
                                     }
                                 },
                                 update = { renderView ->
+                                    renderView.setMediaRepository(viewModel.mediaRepository)
                                     renderView.setTheme(currentTheme)
                                 },
                                 modifier = Modifier.fillMaxSize()
@@ -251,10 +242,12 @@ fun AODEditorScreen(
                     AndroidView(
                         factory = { context ->
                             AODRenderView(context).apply {
+                                setMediaRepository(viewModel.mediaRepository)
                                 setTheme(currentTheme)
                             }
                         },
                         update = { renderView ->
+                            renderView.setMediaRepository(viewModel.mediaRepository)
                             renderView.setTheme(currentTheme)
                         },
                         modifier = Modifier.fillMaxSize()

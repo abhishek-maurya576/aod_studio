@@ -316,6 +316,41 @@ fun PropertyPanel(
 
                 // B. MUSIC Specific Controls (Android 16 Material You Wave Specs)
                 if (selectedElement.type == AODElementType.MUSIC) {
+                    // Player Size Toggle (Small vs Large Mode)
+                    Text(
+                        text = "Player Size",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Primary
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val currentSize = selectedElement.properties[AODElement.PROP_PLAYER_SIZE]?.uppercase() ?: "LARGE"
+                        listOf("SMALL", "LARGE").forEach { size ->
+                            FilterChip(
+                                selected = currentSize == size,
+                                onClick = {
+                                    val newProps = selectedElement.properties.toMutableMap().apply {
+                                        put(AODElement.PROP_PLAYER_SIZE, size)
+                                        if (size == "SMALL") {
+                                            put("showAlbumArt", "false")
+                                        } else {
+                                            put("showAlbumArt", "true")
+                                        }
+                                    }
+                                    onUpdateElement(selectedElement.copy(properties = newProps))
+                                },
+                                label = { Text(if (size == "SMALL") "Small Mode" else "Large Mode") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Primary,
+                                    selectedLabelColor = Color.Black
+                                )
+                            )
+                        }
+                    }
+
                     Text(
                         text = "Android 16 Music Player Style",
                         style = MaterialTheme.typography.labelMedium,
@@ -379,6 +414,22 @@ fun PropertyPanel(
                         }
                     }
 
+                    // Widget Scale / Size Slider for Music Widget
+                    Text(
+                        text = "Widget Scale: ${"%.1f".format(selectedElement.scale)}x",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Primary
+                    )
+                    Slider(
+                        value = selectedElement.scale,
+                        onValueChange = { newScale ->
+                            onUpdateElement(selectedElement.copy(scale = newScale))
+                        },
+                        valueRange = 0.5f..2.5f,
+                        colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
+                    )
+
                     // Show Album Art Toggle
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -394,7 +445,12 @@ fun PropertyPanel(
                                 }
                                 onUpdateElement(selectedElement.copy(properties = newProps))
                             },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Primary)
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Primary,
+                                uncheckedThumbColor = Color.Gray,
+                                uncheckedTrackColor = SurfaceVariant
+                            )
                         )
                     }
 
@@ -404,7 +460,7 @@ fun PropertyPanel(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Show Media Control Buttons (⏮ ▶ ⏭)", style = MaterialTheme.typography.bodyMedium)
+                        Text("Show Media Control Buttons", style = MaterialTheme.typography.bodyMedium)
                         Switch(
                             checked = selectedElement.properties["showControls"]?.toBoolean() ?: true,
                             onCheckedChange = { checked ->
@@ -413,7 +469,12 @@ fun PropertyPanel(
                                 }
                                 onUpdateElement(selectedElement.copy(properties = newProps))
                             },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Primary)
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Primary,
+                                uncheckedThumbColor = Color.Gray,
+                                uncheckedTrackColor = SurfaceVariant
+                            )
                         )
                     }
                 }

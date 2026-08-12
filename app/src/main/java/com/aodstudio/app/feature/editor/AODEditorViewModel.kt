@@ -8,6 +8,7 @@ import com.aodstudio.app.domain.model.AODElementType
 import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.domain.usecase.GetThemesUseCase
 import com.aodstudio.app.domain.usecase.SaveThemeUseCase
+import com.aodstudio.app.media.MediaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +24,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AODEditorViewModel @Inject constructor(
     private val getThemesUseCase: GetThemesUseCase,
-    private val saveThemeUseCase: SaveThemeUseCase
+    private val saveThemeUseCase: SaveThemeUseCase,
+    val mediaRepository: MediaRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AODEditorUiState())
