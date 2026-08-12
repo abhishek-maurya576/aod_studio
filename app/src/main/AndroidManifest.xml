@@ -2,22 +2,27 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions: only declare what is needed now.
-         Runtime permissions (overlay, notifications) will be requested
-         when the user enables the respective feature. -->
-
-    <!-- Required for AOD overlay (requested at runtime when user enables AOD) -->
-    <!-- SYSTEM_ALERT_WINDOW is a special permission — granted via Settings, not runtime dialog -->
+    <!-- ── Core overlay & display permissions ───────────────────────── -->
+    <!-- SYSTEM_ALERT_WINDOW: TYPE_APPLICATION_OVERLAY for AOD rendering (granted via Settings) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <!-- Foreground service — keeps AOD alive while screen is off -->
+    <!-- WAKE_LOCK: required for SCREEN_DIM_WAKE_LOCK to prevent display STATE_OFF -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- ── Foreground service permissions ───────────────────────────── -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Android 14+: FOREGROUND_SERVICE_SPECIAL_USE required for specialUse type -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
-    <!-- Restart AOD service after device reboot -->
+    <!-- ── Battery & power ──────────────────────────────────────────── -->
+    <!-- Baseline AOSP battery optimization exemption. NOTE: insufficient alone on OriginOS —
+         the Vivo-specific whitelist (iManager autostart + Battery High Background) is also mandatory. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Auto-start AOD service after device reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- Notification for foreground service (Android 13+) -->
+    <!-- Foreground service notification (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -43,13 +48,51 @@
             </intent-filter>
         </activity>
 
-        <!-- AOD Foreground Service -->
+        <!-- ── Lock Screen AOD Activity ──────────────────────────────── -->
+        <!--
+            android:showWhenLocked="true" and android:turnScreenOn="true" are required on API 27+
+            to allow this Activity to render ABOVE the system keyguard when the device is locked.
+        -->
+        <activity
+            android:name=".aod.ui.AODActivity"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@style/Theme.AODStudio"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|density|fontScale" />
+
+        <!-- ── AOD Foreground Service ────────────────────────────────── -->
+        <!--
+            foregroundServiceType="specialUse" required on Android 14+.
+            Play Store justification: "always-on-display screen rendering — keeps a
+            low-brightness overlay visible when the screen would normally power off,
+            simulating system AOD on devices where Display.STATE_DOZE is unavailable
+            to third-party apps."
+        -->
         <service
             android:name=".aod.service.AODForegroundService"
             android:foregroundServiceType="specialUse"
+            android:exported="false">
+            <!-- Justification property required by Play Store review for specialUse type -->
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="always-on-display screen rendering" />
+        </service>
+
+        <!-- ── ServiceWatchdog ───────────────────────────────────────── -->
+        <!--
+            AlarmManager-based watchdog that restarts AODForegroundService when OriginOS kills it
+            from recents. Triggered via onTaskRemoved() → setExactAndAllowWhileIdle.
+            NOT exported — only this app's AlarmManager PendingIntents fire it.
+        -->
+        <receiver
+            android:name=".aod.lifecycle.ServiceWatchdog"
             android:exported="false" />
 
-        <!-- Notification Listener Service -->
+        <!-- ── Notification Listener Service ────────────────────────── -->
         <service
             android:name=".notification.service.AODNotificationListenerService"
             android:label="@string/app_name"
@@ -60,7 +103,7 @@
             </intent-filter>
         </service>
 
-        <!-- Boot Receiver -->
+        <!-- ── Boot Receiver ─────────────────────────────────────────── -->
         <receiver
             android:name=".aod.lifecycle.BootReceiver"
             android:enabled="true"

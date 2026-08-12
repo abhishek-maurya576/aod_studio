@@ -85,3 +85,16 @@ This document serves as an exhaustive knowledge dump of all architectural change
 4. **Aspect Ratio Canvas Transformation Math:**
    - Never use separate X and Y scale factors for canvas element rendering.
    - Use `scaleFactor = min(viewW / canvasW, viewH / canvasH)` for BOTH coordinates and font sizes, centered via `contentOffsetX = (viewW - canvasW * scaleFactor) / 2f` and `contentOffsetY = (viewH - canvasH * scaleFactor) / 2f`.
+## ?? 4. Phase 17: Lockscreen AOD & OriginOS 6 Architecture Fix
+
+### Key Lockscreen Fix (AODActivity):
+- **Problem:** Service overlay (TYPE_APPLICATION_OVERLAY) is blocked by Android OS (API 26�16) from rendering over system Keyguard. When locked, overlay was hidden under lockscreen; when unlocked, overlay popped up on home screen.
+- **Solution:** Created AODActivity.kt with Android:showWhenLocked="true" and android:turnScreenOn="true" in AndroidManifest.xml. When ACTION_SCREEN_OFF fires, AODForegroundService launches AODActivity which renders the dim AOD directly ABOVE Keyguard. On ACTION_USER_PRESENT (unlock), AODActivity finishes smoothly.
+
+### OriginOS 6 Survival Stack:
+- AODForegroundService (specialUse FGS)
+- PowerManager.FULL_WAKE_LOCK + screenBrightness = 0.01f
+- ServiceWatchdog (AlarmManager.setExactAndAllowWhileIdle on onTaskRemoved)
+- VivoAdapter deep-links (com.vivo.abe battery whitelist, iManager autostart)
+- VivoOnboardingScreen 3-step wizard
+- AODRenderView hardware layer acceleration (LAYER_TYPE_HARDWARE)
