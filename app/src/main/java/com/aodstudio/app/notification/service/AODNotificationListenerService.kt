@@ -2,6 +2,7 @@ package com.aodstudio.app.notification.service
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.aodstudio.app.media.MediaRepository
 import com.aodstudio.app.notification.NotificationItem
 import com.aodstudio.app.notification.NotificationRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -10,16 +11,16 @@ import javax.inject.Inject
 /**
  * Official Android NotificationListenerService implementation.
  * Receives system notification callbacks (onNotificationPosted / onNotificationRemoved)
- * and updates the NotificationRepository.
- *
- * Privacy rule: Only minimal metadata is stored (packageName, key, timestamp, category).
- * Message body text is NOT stored or recorded.
+ * and initializes live system media session tracking.
  */
 @AndroidEntryPoint
 class AODNotificationListenerService : NotificationListenerService() {
 
     @Inject
     lateinit var notificationRepository: NotificationRepository
+
+    @Inject
+    lateinit var mediaRepository: MediaRepository
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         sbn?.let { notification ->
@@ -42,6 +43,7 @@ class AODNotificationListenerService : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         try {
+            mediaRepository.initSessionListener()
             val activeSbns = activeNotifications ?: return
             for (sbn in activeSbns) {
                 onNotificationPosted(sbn)
@@ -51,3 +53,4 @@ class AODNotificationListenerService : NotificationListenerService() {
         }
     }
 }
+

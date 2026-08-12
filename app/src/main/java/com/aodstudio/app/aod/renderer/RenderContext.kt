@@ -1,5 +1,6 @@
 package com.aodstudio.app.aod.renderer
 
+import android.graphics.Bitmap
 import java.util.Date
 
 /**
@@ -16,7 +17,12 @@ data class RenderContext(
     val notificationPackages: List<String> = emptyList(),
     val mediaTitle: String? = null,
     val mediaArtist: String? = null,
+    val mediaAlbum: String? = null,
+    val mediaAlbumArt: Bitmap? = null,
     val mediaIsPlaying: Boolean = false,
+    val mediaProgressMs: Long = 0L,
+    val mediaDurationMs: Long = 0L,
+    val hasActiveMedia: Boolean = false,
     val burnInOffsetX: Float = 0f,
     val burnInOffsetY: Float = 0f,
     val viewWidth: Int = 1080,
@@ -29,3 +35,4 @@ data class RenderContext(
     val scaleFactorX: Float get() = scaleFactor
     val scaleFactorY: Float get() = scaleFactor
 }
+

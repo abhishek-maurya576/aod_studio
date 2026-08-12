@@ -33,6 +33,7 @@ data class AODElement(
         const val PROP_SHOW_SECONDS = "showSeconds"  // "true" / "false"
         const val PROP_BATTERY_STYLE = "batteryStyle"// PERCENTAGE, ICON, RING, BAR
         const val PROP_MUSIC_INFO = "musicInfo"      // TITLE, ARTIST, ALBUM, ARTWORK
+        const val PROP_PLAYER_SIZE = "playerSize"    // SMALL / LARGE
         const val PROP_NOTIF_MAX_COUNT = "maxNotifs" // e.g. "5"
     }
 }
