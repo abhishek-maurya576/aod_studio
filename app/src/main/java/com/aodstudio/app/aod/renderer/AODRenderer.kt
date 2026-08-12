@@ -59,6 +59,11 @@ class AODRenderer {
 
         // 3. Render each element with burn-in offset, micro-animations, and matrix transforms
         for (element in sortedElements) {
+            // Auto-Hide MUSIC widget when no media is active
+            if (element.type == AODElementType.MUSIC && !context.hasActiveMedia) {
+                continue
+            }
+
             canvas.save()
 
             // Calculate micro-animations

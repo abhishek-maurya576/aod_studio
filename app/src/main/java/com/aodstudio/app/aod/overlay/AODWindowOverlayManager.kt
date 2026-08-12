@@ -101,9 +101,13 @@ class AODWindowOverlayManager @Inject constructor(
                 // True-black background: on AMOLED, these pixels draw zero current.
                 setBackgroundColor(Color.BLACK)
 
-                setOnTouchListener { _, event ->
-                    gestureDetector.onTouchEvent(event)
-                    true
+                setOnTouchListener { view, event ->
+                    val handledByRenderView = onTouchEvent(event)
+                    if (handledByRenderView) {
+                        true
+                    } else {
+                        gestureDetector.onTouchEvent(event)
+                    }
                 }
             }
 

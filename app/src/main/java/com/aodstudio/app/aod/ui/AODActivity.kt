@@ -87,9 +87,13 @@ class AODActivity : ComponentActivity() {
             setNotificationRepository(notificationRepository)
             setMediaRepository(mediaRepository)
             setBackgroundColor(Color.BLACK)
-            setOnTouchListener { _, event ->
-                gestureDetector.onTouchEvent(event)
-                true
+            setOnTouchListener { view, event ->
+                val handledByRenderView = onTouchEvent(event)
+                if (handledByRenderView) {
+                    true
+                } else {
+                    gestureDetector.onTouchEvent(event)
+                }
             }
         }
 
