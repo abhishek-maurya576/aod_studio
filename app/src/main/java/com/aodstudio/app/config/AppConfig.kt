@@ -29,6 +29,12 @@ object AppConfig {
         const val BURN_IN_PROTECTION_ENABLED = true
         const val ANIMATION_ENABLED = true
         const val VIVO_COMPATIBILITY_ENABLED = true
+        // Feature flag: enable AccessibilityService screen-intercept path (heavier permission ask).
+        // Defaults to false — switch to true and test on Vivo T4 Pro to determine which path
+        // actually prevents STATE_OFF before the display commits to powering down.
+        const val USE_ACCESSIBILITY_SCREEN_INTERCEPT = false
+        // Show multi-step Vivo/OriginOS onboarding wizard on first launch.
+        const val SHOW_VIVO_ONBOARDING = true
     }
 
     // ─── Storage ───────────────────────────────────────────────────
@@ -47,6 +53,11 @@ object AppConfig {
         const val NOTIFICATION_ID = 1001
         const val SERVICE_NOTIFICATION_TITLE = "AOD Studio is active"
         const val SERVICE_NOTIFICATION_TEXT = "Your custom AOD is running"
+        // AlarmManager watchdog interval: how often to re-arm the service restart alarm.
+        // 5 minutes gives a reasonable recovery window without excessive battery drain.
+        const val WATCHDOG_ALARM_INTERVAL_MS = 5 * 60 * 1000L
+        // DataStore key tracking whether the user completed Vivo onboarding.
+        const val PREF_ONBOARDING_COMPLETE = "vivo_onboarding_complete"
     }
 
     // ─── Limits ────────────────────────────────────────────────────
