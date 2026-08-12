@@ -48,6 +48,10 @@ class AODRenderView @JvmOverloads constructor(
 
     init {
         setBackgroundColor(Color.BLACK)
+        // GPU-backed layer: the compositor caches this View's content between 1Hz redraws.
+        // Reduces CPU wake time between invalidate() calls — critical for battery efficiency
+        // during screen-off AOD mode where we're already fighting OEM power management.
+        setLayerType(LAYER_TYPE_HARDWARE, null)
     }
 
     fun setTheme(theme: AODTheme) {
