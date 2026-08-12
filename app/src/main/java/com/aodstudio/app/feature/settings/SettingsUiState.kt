@@ -15,5 +15,8 @@ data class SettingsUiState(
     val pocketDetectionEnabled: Boolean = true,
     val burnInProtectionEnabled: Boolean = true,
     val aodTimeoutMinutes: Int = 0,
-    val userMessage: String? = null
+    val userMessage: String? = null,
+    /** True if running on a Vivo/OriginOS device — controls visibility of OriginOS survival section. */
+    val isVivoDevice: Boolean = false
 )
+

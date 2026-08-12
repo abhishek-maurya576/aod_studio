@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.lifecycle.ViewModel
+import com.aodstudio.app.aod.compatibility.VivoAdapter
 import com.aodstudio.app.aod.service.AODForegroundService
 import com.aodstudio.app.notification.service.AODNotificationListenerService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,20 +20,28 @@ import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 /**
- * ViewModel for Settings screen.
- * Manages permission checks, AOD service toggle, battery optimization, and hardware feature toggles.
+ * ViewModel for the Settings screen.
+ * Manages permission checks, AOD service toggle, battery optimization,
+ * hardware feature toggles, and Vivo/OriginOS-specific deep-link intents.
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val vivoAdapter: VivoAdapter
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SettingsUiState())
+    private val _uiState = MutableStateFlow(
+        SettingsUiState(isVivoDevice = vivoAdapter.isVivoDevice)
+    )
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {
         checkPermissions()
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Permission checks
+    // ──────────────────────────────────────────────────────────────────────────
 
     fun checkPermissions() {
         val hasOverlay = Settings.canDrawOverlays(context)
@@ -46,10 +55,15 @@ class SettingsViewModel @Inject constructor(
                 hasNotificationPermission = hasNotificationListener,
                 isBatteryOptimizationExempt = isBatteryExempt,
                 isAodEnabled = isServiceRunning,
-                isServiceActuallyRunning = isServiceRunning
+                isServiceActuallyRunning = isServiceRunning,
+                isVivoDevice = vivoAdapter.isVivoDevice
             )
         }
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Service toggle
+    // ──────────────────────────────────────────────────────────────────────────
 
     fun toggleAodService(enable: Boolean) {
         if (enable) {
@@ -77,6 +91,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // Hardware/behavior toggles
+    // ──────────────────────────────────────────────────────────────────────────
+
     fun toggleDoubleTapToExit(enabled: Boolean) {
         _uiState.update { it.copy(doubleTapToExit = enabled) }
     }
@@ -96,6 +114,10 @@ class SettingsViewModel @Inject constructor(
     fun setAodTimeout(minutes: Int) {
         _uiState.update { it.copy(aodTimeoutMinutes = minutes) }
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Standard permission intents
+    // ──────────────────────────────────────────────────────────────────────────
 
     fun openOverlaySettingsIntent(): Intent {
         return Intent(
@@ -119,9 +141,36 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // Vivo/OriginOS-specific intents (delegated to VivoAdapter)
+    // Each returns null if not a Vivo device or if the deep-link doesn't resolve.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the deep-link Intent for Vivo's "High Background Power Consumption" whitelist.
+     * UNVERIFIED — see [VivoAdapter.getBatteryHighBackgroundIntent].
+     */
+    fun getBatteryHighBackgroundIntent(): Intent? =
+        vivoAdapter.getBatteryHighBackgroundIntent(context)
+
+    /**
+     * Returns the deep-link Intent for iManager > Autostart Manager.
+     * UNVERIFIED — see [VivoAdapter.getAutostartIntent].
+     */
+    fun getAutostartIntent(): Intent? =
+        vivoAdapter.getAutostartIntent(context)
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Snackbar message
+    // ──────────────────────────────────────────────────────────────────────────
+
     fun clearUserMessage() {
         _uiState.update { it.copy(userMessage = null) }
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Internal helpers
+    // ──────────────────────────────────────────────────────────────────────────
 
     private fun isNotificationListenerEnabled(): Boolean {
         val enabledListeners = Settings.Secure.getString(

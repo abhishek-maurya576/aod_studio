@@ -2,6 +2,7 @@ package com.aodstudio.app.feature.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -290,6 +293,81 @@ fun SettingsScreen(
                 onGrant = { context.startActivity(viewModel.openBatteryOptimizationIntent()) }
             )
 
+            // ─── Vivo / OriginOS Survival Section ──────────────────────
+            // Only shown when running on a Vivo/OriginOS device.
+            if (uiState.isVivoDevice) {
+                Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XS.dp))
+
+                Text(
+                    text = "VIVO / ORIGINOS SURVIVAL",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Secondary,
+                    fontWeight = FontWeight.Bold
+                )
+
+                // Critical warning: AOSP battery optimization alone is not enough on OriginOS.
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(ThemeConfig.Radius.MD.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Secondary.copy(alpha = 0.10f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(ThemeConfig.Spacing.MD.dp),
+                        horizontalArrangement = Arrangement.spacedBy(ThemeConfig.Spacing.SM.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Warning,
+                            contentDescription = "Warning",
+                            tint = Secondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Battery Unrestricted (above) is insufficient on OriginOS. " +
+                                    "All three steps below are mandatory for reliable AOD survival.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Secondary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Step 1: Battery High Background whitelist
+                VivoActionCard(
+                    stepNumber = "1",
+                    title = "High Background Power",
+                    description = "Add AOD Studio to Vivo's own battery whitelist (separate from Android's standard exemption)",
+                    buttonLabel = "Open Battery Settings",
+                    onClick = {
+                        viewModel.getBatteryHighBackgroundIntent()?.let { context.startActivity(it) }
+                    }
+                )
+
+                // Step 2: iManager Autostart
+                VivoActionCard(
+                    stepNumber = "2",
+                    title = "Autostart Permission",
+                    description = "Enable autostart in iManager so the service restarts after reboot",
+                    buttonLabel = "Open iManager",
+                    onClick = {
+                        viewModel.getAutostartIntent()?.let { context.startActivity(it) }
+                    }
+                )
+
+                // Step 3: Recents lock (manual gesture only — no deep-link)
+                VivoActionCard(
+                    stepNumber = "3",
+                    title = "Lock App in Recents",
+                    description = "Open Recents screen → tap the padlock icon on AOD Studio's card to prevent memory purge",
+                    buttonLabel = null, // Manual action — no deep-link available
+                    onClick = {}
+                )
+            }
+
             Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XL.dp))
         }
     }
@@ -410,3 +488,80 @@ private fun PermissionCard(
         }
     }
 }
+
+/**
+ * Action card for the Vivo/OriginOS survival steps.
+ * Shows a step number badge, title, description, and an optional "Open Settings" button.
+ * When [buttonLabel] is null, only the instructions are shown (e.g. Recents Lock step).
+ */
+@Composable
+private fun VivoActionCard(
+    stepNumber: String,
+    title: String,
+    description: String,
+    buttonLabel: String?,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(ThemeConfig.Radius.MD.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ThemeConfig.Spacing.MD.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                // Step number circle badge
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(
+                            color = Secondary.copy(alpha = 0.2f),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stepNumber,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Secondary
+                    )
+                }
+                Spacer(modifier = Modifier.padding(start = ThemeConfig.Spacing.SM.dp))
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (buttonLabel != null) {
+                Spacer(modifier = Modifier.padding(start = ThemeConfig.Spacing.XS.dp))
+                Button(
+                    onClick = onClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = Secondary)
+                ) {
+                    Text("Open", color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+    }
+}
+
