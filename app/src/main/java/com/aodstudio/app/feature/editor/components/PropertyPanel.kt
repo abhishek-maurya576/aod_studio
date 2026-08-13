@@ -566,7 +566,7 @@ fun PropertyPanel(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         val visibilities = listOf("ICONS_ONLY", "COUNT_BADGE", "DETAILED")
-                        val currentVis = selectedElement.properties["visibilityMode"]?.uppercase() ?: "COUNT_BADGE"
+                        val currentVis = selectedElement.properties["visibilityMode"]?.uppercase() ?: "ICONS_ONLY"
 
                         visibilities.forEach { vis ->
                             FilterChip(
@@ -585,6 +585,22 @@ fun PropertyPanel(
                             )
                         }
                     }
+
+                    // Notification Icon / Widget Scale Slider
+                    Text(
+                        text = "Notification Icon Scale: ${"%.1f".format(selectedElement.scale)}x",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Primary
+                    )
+                    Slider(
+                        value = selectedElement.scale,
+                        onValueChange = { newScale ->
+                            onUpdateElement(selectedElement.copy(scale = newScale))
+                        },
+                        valueRange = 0.5f..3.0f,
+                        colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
+                    )
                 }
 
                 // ─── Fancy Font Style Selector ─────────────────────────
