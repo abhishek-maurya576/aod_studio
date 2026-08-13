@@ -187,11 +187,13 @@ fun AODEditorScreen(
                                 factory = { context ->
                                     AODRenderView(context).apply {
                                         setMediaRepository(viewModel.mediaRepository)
+                                        setNotificationRepository(viewModel.notificationRepository)
                                         setTheme(currentTheme)
                                     }
                                 },
                                 update = { renderView ->
                                     renderView.setMediaRepository(viewModel.mediaRepository)
+                                    renderView.setNotificationRepository(viewModel.notificationRepository)
                                     renderView.setTheme(currentTheme)
                                 },
                                 modifier = Modifier.fillMaxSize()

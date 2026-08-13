@@ -14,6 +14,7 @@ import com.aodstudio.app.domain.model.AODElementType
 import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.media.MediaRepository
 import com.aodstudio.app.notification.NotificationRepository
+import kotlinx.coroutines.launch
 import java.util.Date
 import kotlin.math.abs
 import kotlin.math.min
@@ -65,8 +66,22 @@ class AODRenderView @JvmOverloads constructor(
         this.batteryRepo = repo
     }
 
+    private var notificationJob: kotlinx.coroutines.Job? = null
+    private val viewScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
+
     fun setNotificationRepository(repo: NotificationRepository) {
         this.notificationRepo = repo
+        observeNotificationFlow()
+    }
+
+    private fun observeNotificationFlow() {
+        notificationJob?.cancel()
+        val repo = notificationRepo ?: return
+        notificationJob = viewScope.launch {
+            repo.activeNotifications.collect {
+                postInvalidate()
+            }
+        }
     }
 
     fun setMediaRepository(repo: MediaRepository) {
@@ -77,12 +92,14 @@ class AODRenderView @JvmOverloads constructor(
     fun stopRendering() {
         isRendering = false
         redrawHandler.removeCallbacks(redrawRunnable)
+        notificationJob?.cancel()
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         isRendering = true
         redrawHandler.postDelayed(redrawRunnable, redrawIntervalMs)
+        observeNotificationFlow()
     }
 
     override fun onDetachedFromWindow() {
@@ -216,6 +233,7 @@ class AODRenderView @JvmOverloads constructor(
             isBatteryFull = battery?.isFull ?: false,
             notificationCount = notifications?.size ?: 0,
             notificationPackages = notifications?.map { it.packageName } ?: emptyList(),
+            notificationsList = notifications ?: emptyList(),
             mediaTitle = media?.title,
             mediaArtist = media?.artist,
             mediaAlbum = media?.album,

@@ -15,6 +15,7 @@ data class RenderContext(
     val isBatteryFull: Boolean = false,
     val notificationCount: Int = 0,
     val notificationPackages: List<String> = emptyList(),
+    val notificationsList: List<com.aodstudio.app.notification.NotificationItem> = emptyList(),
     val mediaTitle: String? = null,
     val mediaArtist: String? = null,
     val mediaAlbum: String? = null,
