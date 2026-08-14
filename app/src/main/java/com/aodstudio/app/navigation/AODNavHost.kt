@@ -71,6 +71,9 @@ fun AODNavHost(
                 onNavigateToEditor = { themeId ->
                     navController.navigate(EditorRoute(themeId))
                 },
+                onNavigateToPreview = { themeId ->
+                    navController.navigate(PreviewRoute(themeId))
+                },
                 onBack = { navController.popBackStack() }
             )
         }

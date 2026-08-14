@@ -1,14 +1,23 @@
 package com.aodstudio.app.feature.library
 
+import android.content.Context
+import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aodstudio.app.aod.service.AODForegroundService
+import com.aodstudio.app.battery.BatteryRepository
 import com.aodstudio.app.core.common.Result
+import com.aodstudio.app.domain.model.AODTheme
+import com.aodstudio.app.domain.template.TemplateRegistry
 import com.aodstudio.app.domain.usecase.DeleteThemeUseCase
-import com.aodstudio.app.domain.usecase.DuplicateThemeUseCase
 import com.aodstudio.app.domain.usecase.GetThemesUseCase
 import com.aodstudio.app.domain.usecase.ImportExportThemeUseCase
+import com.aodstudio.app.domain.usecase.ResetThemeUseCase
 import com.aodstudio.app.domain.usecase.SaveThemeUseCase
+import com.aodstudio.app.media.MediaRepository
+import com.aodstudio.app.notification.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,15 +27,20 @@ import javax.inject.Inject
 
 /**
  * ViewModel for Theme Library screen.
- * Manages loading, filtering, active selection, duplication, deletion, and JSON import/export.
+ * Manages loading, dynamic category filtering, active selection, applying to AOD service, reset-to-default, deletion, and JSON import/export.
  */
 @HiltViewModel
 class ThemeLibraryViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val getThemesUseCase: GetThemesUseCase,
     private val saveThemeUseCase: SaveThemeUseCase,
     private val deleteThemeUseCase: DeleteThemeUseCase,
-    private val duplicateThemeUseCase: DuplicateThemeUseCase,
-    private val importExportThemeUseCase: ImportExportThemeUseCase
+    private val resetThemeUseCase: ResetThemeUseCase,
+    private val importExportThemeUseCase: ImportExportThemeUseCase,
+    val templateRegistry: TemplateRegistry,
+    val batteryRepository: BatteryRepository,
+    val notificationRepository: NotificationRepository,
+    val mediaRepository: MediaRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ThemeLibraryUiState())
@@ -44,10 +58,27 @@ class ThemeLibraryViewModel @Inject constructor(
                 is Result.Success -> {
                     val activeIdResult = getThemesUseCase.getActiveTheme()
                     val activeId = (activeIdResult as? Result.Success)?.data?.id
+                    val loadedThemes = themesResult.data
+
+                    // Dynamically discover all unique categories
+                    val registryCategories = templateRegistry.getCategories()
+                    val themeCategories = loadedThemes
+                        .mapNotNull { it.metadata[AODTheme.META_CATEGORY] }
+                        .filter { it.isNotBlank() }
+
+                    val allCategories = (registryCategories + themeCategories)
+                        .distinct()
+                        .sortedWith(Comparator { a, b ->
+                            if (a.equals("All", ignoreCase = true)) -1
+                            else if (b.equals("All", ignoreCase = true)) 1
+                            else a.compareTo(b, ignoreCase = true)
+                        })
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            themes = themesResult.data,
+                            themes = loadedThemes,
+                            categories = allCategories,
                             activeThemeId = activeId
                         )
                     }
@@ -73,11 +104,30 @@ class ThemeLibraryViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = saveThemeUseCase.setActive(themeId)) {
                 is Result.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            activeThemeId = themeId,
-                            userMessage = "Theme activated as active AOD"
-                        )
+                    try {
+                        if (Settings.canDrawOverlays(context)) {
+                            AODForegroundService.startService(context)
+                            _uiState.update {
+                                it.copy(
+                                    activeThemeId = themeId,
+                                    userMessage = "Theme applied & active on AOD!"
+                                )
+                            }
+                        } else {
+                            _uiState.update {
+                                it.copy(
+                                    activeThemeId = themeId,
+                                    userMessage = "Theme set as active! Grant System Overlay in Settings to start AOD."
+                                )
+                            }
+                        }
+                    } catch (e: Throwable) {
+                        _uiState.update {
+                            it.copy(
+                                activeThemeId = themeId,
+                                userMessage = "Theme activated as active AOD"
+                            )
+                        }
                     }
                 }
                 is Result.Error -> {
@@ -88,12 +138,14 @@ class ThemeLibraryViewModel @Inject constructor(
         }
     }
 
-    fun duplicateTheme(themeId: String) {
+    fun resetThemeToDefault(themeId: String) {
         viewModelScope.launch {
-            when (val result = duplicateThemeUseCase.execute(themeId)) {
+            when (val result = resetThemeUseCase.execute(themeId)) {
                 is Result.Success -> {
                     loadThemes()
-                    _uiState.update { it.copy(userMessage = "Theme duplicated successfully") }
+                    _uiState.update {
+                        it.copy(userMessage = "Reset '${result.data.name}' to default configuration")
+                    }
                 }
                 is Result.Error -> {
                     _uiState.update { it.copy(errorMessage = result.message) }
@@ -101,6 +153,14 @@ class ThemeLibraryViewModel @Inject constructor(
                 else -> {}
             }
         }
+    }
+
+    fun isBuiltInTemplate(themeId: String): Boolean {
+        return templateRegistry.isBuiltInTemplate(themeId)
+    }
+
+    fun isThemeCustomized(theme: AODTheme): Boolean {
+        return templateRegistry.isThemeCustomized(theme)
     }
 
     fun deleteTheme(themeId: String) {

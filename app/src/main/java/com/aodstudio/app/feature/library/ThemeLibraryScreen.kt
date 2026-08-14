@@ -1,8 +1,5 @@
 package com.aodstudio.app.feature.library
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,19 +20,24 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -50,6 +53,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -64,7 +68,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.aodstudio.app.aod.renderer.AODRenderView
 import com.aodstudio.app.config.ThemeConfig
 import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.ui.theme.Primary
@@ -74,19 +83,35 @@ import com.aodstudio.app.ui.theme.SurfaceVariant
 import com.aodstudio.app.ui.theme.Tertiary
 
 /**
- * Theme Library Screen — displays grid of themes, category tabs, action buttons
- * (Activate, Duplicate, Delete, Edit), and theme details.
+ * Template Library Screen — dynamic template discovery grid, live card rendering previews,
+ * auto-refreshing pool on resume, category filtering, customized template indicators,
+ * 3-dot overflow menu with Reset to Default, and bridged Apply/Active controls.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeLibraryScreen(
     viewModel: ThemeLibraryViewModel = hiltViewModel(),
     onNavigateToEditor: (String?) -> Unit = {},
+    onNavigateToPreview: (String) -> Unit = {},
     onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var themeToDelete by remember { mutableStateOf<AODTheme?>(null) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Auto-refresh themes whenever returning from the editor or resuming the screen
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadThemes()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(uiState.userMessage, uiState.errorMessage) {
         uiState.userMessage?.let {
@@ -104,7 +129,7 @@ fun ThemeLibraryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Theme Library",
+                        text = "Template Library",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold
@@ -130,7 +155,7 @@ fun ThemeLibraryScreen(
                 containerColor = Primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Icon(imageVector = Icons.Outlined.Add, contentDescription = "Create Theme")
+                Icon(imageVector = Icons.Outlined.Add, contentDescription = "Create Template")
             }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -142,7 +167,7 @@ fun ThemeLibraryScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // ─── Category Filter Chips ─────────────────────────────
+            // ─── Dynamic Category Filter Chips ────────────────────────
             CategoryFilterRow(
                 categories = uiState.categories,
                 selectedCategory = uiState.selectedCategory,
@@ -151,7 +176,7 @@ fun ThemeLibraryScreen(
 
             Spacer(modifier = Modifier.height(ThemeConfig.Spacing.SM.dp))
 
-            // ─── Content Area ──────────────────────────────────────
+            // ─── Template Pool Grid ──────────────────────────────────
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -165,7 +190,7 @@ fun ThemeLibraryScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No themes found in this category",
+                        text = "No templates found in this category",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -179,12 +204,16 @@ fun ThemeLibraryScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(uiState.filteredThemes, key = { it.id }) { theme ->
-                        ThemeCard(
+                        TemplateCard(
                             theme = theme,
                             isActive = theme.id == uiState.activeThemeId,
+                            isBuiltIn = viewModel.isBuiltInTemplate(theme.id),
+                            isCustomized = viewModel.isThemeCustomized(theme),
+                            viewModel = viewModel,
                             onActivate = { viewModel.activateTheme(theme.id) },
                             onEdit = { onNavigateToEditor(theme.id) },
-                            onDuplicate = { viewModel.duplicateTheme(theme.id) },
+                            onPreview = { onNavigateToPreview(theme.id) },
+                            onResetToDefault = { viewModel.resetThemeToDefault(theme.id) },
                             onDelete = { themeToDelete = theme }
                         )
                     }
@@ -197,7 +226,7 @@ fun ThemeLibraryScreen(
     themeToDelete?.let { theme ->
         AlertDialog(
             onDismissRequest = { themeToDelete = null },
-            title = { Text("Delete Theme") },
+            title = { Text("Delete Template") },
             text = { Text("Are you sure you want to delete '${theme.name}'?") },
             confirmButton = {
                 TextButton(
@@ -230,7 +259,7 @@ private fun CategoryFilterRow(
         modifier = Modifier.fillMaxWidth()
     ) {
         items(categories) { category ->
-            val selected = category == selectedCategory
+            val selected = category.equals(selectedCategory, ignoreCase = true)
             FilterChip(
                 selected = selected,
                 onClick = { onSelectCategory(category) },
@@ -246,19 +275,29 @@ private fun CategoryFilterRow(
     }
 }
 
+/**
+ * Independent Template Card in the template pool.
+ * Features live AOD rendering preview, customized indicator badge, 3-dot overflow menu, and bridged Apply/Active action.
+ */
 @Composable
-private fun ThemeCard(
+private fun TemplateCard(
     theme: AODTheme,
     isActive: Boolean,
+    isBuiltIn: Boolean,
+    isCustomized: Boolean,
+    viewModel: ThemeLibraryViewModel,
     onActivate: () -> Unit,
     onEdit: () -> Unit,
-    onDuplicate: () -> Unit,
+    onPreview: () -> Unit,
+    onResetToDefault: () -> Unit,
     onDelete: () -> Unit
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(260.dp),
+            .clickable(onClick = onPreview),
         shape = RoundedCornerShape(ThemeConfig.Radius.LG.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isActive) SurfaceContainer else SurfaceVariant
@@ -267,36 +306,95 @@ private fun ThemeCard(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(ThemeConfig.Spacing.MD.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .fillMaxWidth()
+                .padding(ThemeConfig.Spacing.SM.dp)
         ) {
-            // Top row: Category badge & Active status
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // ─── 1. Top Section: Live Mini Preview Canvas ───────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.85f)
+                    .clip(RoundedCornerShape(ThemeConfig.Radius.MD.dp))
+                    .background(Color.Black)
             ) {
-                val category = theme.metadata[AODTheme.META_CATEGORY] ?: "Custom"
-                Text(
-                    text = category.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Primary,
-                    fontWeight = FontWeight.Bold
+                AndroidView(
+                    factory = { context ->
+                        AODRenderView(context).apply {
+                            setBatteryRepository(viewModel.batteryRepository)
+                            setNotificationRepository(viewModel.notificationRepository)
+                            setMediaRepository(viewModel.mediaRepository)
+                            setTheme(theme)
+                        }
+                    },
+                    update = { renderView ->
+                        renderView.setTheme(theme)
+                    },
+                    modifier = Modifier.fillMaxSize()
                 )
 
+                // Category & Customized Tag Overlays
+                val category = theme.metadata[AODTheme.META_CATEGORY] ?: "Custom"
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                ) {
+                    Text(
+                        text = category.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp,
+                        modifier = Modifier
+                            .background(
+                                color = Color.Black.copy(alpha = 0.75f),
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+
+                    if (isCustomized && isBuiltIn) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "CUSTOMIZED",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Secondary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 8.sp,
+                            modifier = Modifier
+                                .background(
+                                    color = Color.Black.copy(alpha = 0.85f),
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                // Active Status Badge
                 if (isActive) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .background(
+                                color = Color.Black.copy(alpha = 0.75f),
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Outlined.CheckCircle,
                             contentDescription = "Active",
                             tint = Tertiary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(12.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = "ACTIVE",
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
                             color = Tertiary
                         )
@@ -304,70 +402,156 @@ private fun ThemeCard(
                 }
             }
 
-            // Center info
-            Column {
-                Text(
-                    text = theme.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XS.dp))
 
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = "${theme.elements.size} elements",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Action row
+            // ─── 2. Information Header & 3-Dot Overflow Menu ───────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Activate / Apply button
-                TextButton(
-                    onClick = onActivate,
-                    contentPadding = PaddingValues(horizontal = 8.dp)
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (isActive) "Active" else "Apply",
-                        color = if (isActive) Tertiary else Primary,
-                        fontWeight = FontWeight.Bold
+                        text = theme.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "${theme.elements.size} elements",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
                     )
                 }
 
-                // Action icons: Edit, Duplicate, Delete
-                Row {
-                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                // 3-Dot Menu Anchor
+                Box {
+                    IconButton(
+                        onClick = { menuExpanded = true },
+                        modifier = Modifier.size(28.dp)
+                    ) {
                         Icon(
-                            imageVector = Icons.Outlined.Edit,
-                            contentDescription = "Edit",
+                            imageVector = Icons.Outlined.MoreVert,
+                            contentDescription = "Options",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    IconButton(onClick = onDuplicate, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            imageVector = Icons.Outlined.ContentCopy,
-                            contentDescription = "Duplicate",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                        modifier = Modifier.background(SurfaceVariant)
+                    ) {
+                        // Preview Fullscreen Option
+                        DropdownMenuItem(
+                            text = { Text("Preview Fullscreen") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Visibility,
+                                    contentDescription = null,
+                                    tint = Primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onPreview()
+                            }
+                        )
+
+                        // Reset to Default Option (Available for built-in template definitions)
+                        if (isBuiltIn) {
+                            DropdownMenuItem(
+                                text = { Text(if (isCustomized) "Reset to Default" else "Restore Default") },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.RestartAlt,
+                                        contentDescription = null,
+                                        tint = if (isCustomized) Secondary else Primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onResetToDefault()
+                                }
+                            )
+                        }
+
+                        // Delete Option
+                        DropdownMenuItem(
+                            text = { Text("Delete", color = Secondary) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Delete,
+                                    contentDescription = null,
+                                    tint = Secondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onDelete()
+                            }
                         )
                     }
-                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                }
+            }
+
+            Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XXS.dp))
+
+            // ─── 3. Action Row (Bridged Apply / Active & Edit) ─────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onActivate,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isActive) Tertiary.copy(alpha = 0.2f) else Primary,
+                        contentColor = if (isActive) Tertiary else Color.Black
+                    ),
+                    shape = RoundedCornerShape(ThemeConfig.Radius.SM.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                    modifier = Modifier.height(30.dp)
+                ) {
+                    if (isActive) {
                         Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = "Delete",
-                            tint = Secondary,
-                            modifier = Modifier.size(18.dp)
+                            imageVector = Icons.Outlined.CheckCircle,
+                            contentDescription = null,
+                            tint = Tertiary,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Active",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
+                        )
+                    } else {
+                        Text(
+                            text = "Apply",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
                         )
                     }
+                }
+
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Edit,
+                        contentDescription = "Edit Template",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }
