@@ -4,6 +4,7 @@ import android.content.Context
 import com.aodstudio.app.aod.overlay.AODWindowOverlayManager
 import com.aodstudio.app.battery.BatteryRepository
 import com.aodstudio.app.domain.model.AODTheme
+import com.aodstudio.app.domain.repository.SettingsRepository
 import com.aodstudio.app.media.MediaRepository
 import com.aodstudio.app.notification.NotificationRepository
 import io.mockk.mockk
@@ -12,7 +13,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 /**
- * Unit tests for Phase 15 AOD Activation and Overlay Manager state lifecycle.
+ * Unit tests for AOD Activation and Overlay Manager state lifecycle.
  */
 class AODActivationTest {
 
@@ -22,12 +23,14 @@ class AODActivationTest {
         val mockBatteryRepo = mockk<BatteryRepository>(relaxed = true)
         val mockNotificationRepo = mockk<NotificationRepository>(relaxed = true)
         val mockMediaRepo = mockk<MediaRepository>(relaxed = true)
+        val mockSettingsRepo = mockk<SettingsRepository>(relaxed = true)
 
         val manager = AODWindowOverlayManager(
             context = mockContext,
             batteryRepository = mockBatteryRepo,
             notificationRepository = mockNotificationRepo,
-            mediaRepository = mockMediaRepo
+            mediaRepository = mockMediaRepo,
+            settingsRepository = mockSettingsRepo
         )
         assertFalse(manager.isShowing())
     }

@@ -1,9 +1,12 @@
 package com.aodstudio.app.feature.editor
 
+import android.content.Context
 import com.aodstudio.app.core.common.Result
 import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.domain.usecase.GetThemesUseCase
 import com.aodstudio.app.domain.usecase.SaveThemeUseCase
+import com.aodstudio.app.media.MediaRepository
+import com.aodstudio.app.notification.NotificationRepository
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -20,15 +23,18 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * Unit tests for Phase 14 Advanced Editor (Undo/Redo history stack, snap-to-grid, and layer zIndex reordering).
+ * Unit tests for Advanced Editor (Undo/Redo history stack, snap-to-grid, and layer zIndex reordering).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AdvancedEditorTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
+    private val context = mockk<Context>(relaxed = true)
     private val getThemesUseCase = mockk<GetThemesUseCase>()
     private val saveThemeUseCase = mockk<SaveThemeUseCase>()
+    private val mediaRepository = mockk<MediaRepository>(relaxed = true)
+    private val notificationRepository = mockk<NotificationRepository>(relaxed = true)
 
     private val testTheme = AODTheme.createDefaultTheme("Advanced Test Theme")
 
@@ -45,7 +51,7 @@ class AdvancedEditorTest {
 
     @Test
     fun `position update pushes state to undo stack`() = runTest {
-        val viewModel = AODEditorViewModel(getThemesUseCase, saveThemeUseCase)
+        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, mediaRepository, notificationRepository)
         viewModel.loadTheme("theme_adv")
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -59,7 +65,7 @@ class AdvancedEditorTest {
 
     @Test
     fun `undo reverts position change`() = runTest {
-        val viewModel = AODEditorViewModel(getThemesUseCase, saveThemeUseCase)
+        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, mediaRepository, notificationRepository)
         viewModel.loadTheme("theme_adv")
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -76,7 +82,7 @@ class AdvancedEditorTest {
 
     @Test
     fun `snapToCenter snaps coordinates within 20px to 540f`() = runTest {
-        val viewModel = AODEditorViewModel(getThemesUseCase, saveThemeUseCase)
+        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, mediaRepository, notificationRepository)
         viewModel.loadTheme("theme_adv")
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -89,7 +95,7 @@ class AdvancedEditorTest {
 
     @Test
     fun `moveLayerUp increases element zIndex`() = runTest {
-        val viewModel = AODEditorViewModel(getThemesUseCase, saveThemeUseCase)
+        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, mediaRepository, notificationRepository)
         viewModel.loadTheme("theme_adv")
         testDispatcher.scheduler.advanceUntilIdle()
 
