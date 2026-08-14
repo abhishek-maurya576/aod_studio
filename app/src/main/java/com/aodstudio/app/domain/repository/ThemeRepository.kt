@@ -31,9 +31,9 @@ interface ThemeRepository {
     suspend fun saveTheme(theme: AODTheme): Result<AODTheme>
 
     /**
-     * Duplicates an existing theme with a new ID and updated name.
+     * Resets a built-in theme back to its original factory default configuration.
      */
-    suspend fun duplicateTheme(id: String, newName: String? = null): Result<AODTheme>
+    suspend fun resetThemeToDefault(id: String): Result<AODTheme>
 
     /**
      * Deletes a theme by ID.

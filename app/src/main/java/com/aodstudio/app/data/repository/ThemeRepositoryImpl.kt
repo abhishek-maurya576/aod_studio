@@ -59,19 +59,12 @@ class ThemeRepositoryImpl @Inject constructor(
         return result
     }
 
-    override suspend fun duplicateTheme(id: String, newName: String?): Result<AODTheme> {
-        return when (val getResult = getThemeById(id)) {
-            is Result.Success -> {
-                val original = getResult.data
-                val duplicated = original.copy(
-                    id = generateId(),
-                    name = newName ?: "${original.name} (Copy)"
-                )
-                saveTheme(duplicated)
-            }
-            is Result.Error -> getResult
-            else -> Result.Error("Duplicate error")
+    override suspend fun resetThemeToDefault(id: String): Result<AODTheme> {
+        val result = themeStorage.resetThemeToDefault(id)
+        if (result is Result.Success) {
+            refreshThemes()
         }
+        return result
     }
 
     override suspend fun deleteTheme(id: String): Result<Boolean> {

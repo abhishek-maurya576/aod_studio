@@ -6,12 +6,12 @@ import com.aodstudio.app.domain.repository.ThemeRepository
 import javax.inject.Inject
 
 /**
- * Use case to duplicate an existing AOD theme.
+ * Use case to reset a template back to its factory default definition.
  */
-class DuplicateThemeUseCase @Inject constructor(
+class ResetThemeUseCase @Inject constructor(
     private val repository: ThemeRepository
 ) {
-    suspend fun execute(id: String, newName: String? = null): Result<AODTheme> {
-        return repository.duplicateTheme(id, newName)
+    suspend fun execute(id: String): Result<AODTheme> {
+        return repository.resetThemeToDefault(id)
     }
 }

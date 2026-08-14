@@ -5,6 +5,7 @@ import com.aodstudio.app.config.AppConfig
 import com.aodstudio.app.core.common.Result
 import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.domain.model.ThemeSerializer
+import com.aodstudio.app.domain.template.TemplateRegistry
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
@@ -12,11 +13,12 @@ import javax.inject.Singleton
 
 /**
  * Manages theme JSON file persistence in local internal storage and assets.
- * Handles reading, writing, deleting, importing, and initial asset theme loading.
+ * Handles reading, writing, deleting, importing, reset-to-default, and initial template discovery.
  */
 @Singleton
 class ThemeStorage @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val templateRegistry: TemplateRegistry
 ) {
 
     private val themesDir: File
@@ -25,18 +27,31 @@ class ThemeStorage @Inject constructor(
         }
 
     /**
-     * Initializes theme storage — populates built-in asset themes if local directory is empty.
+     * Initializes theme storage — populates built-in asset themes and code-registered templates
+     * if local files are missing.
      */
     fun initializeBuiltInThemesIfNeeded(): Result<List<AODTheme>> {
         return try {
             val existingFiles = getThemeFiles()
             if (existingFiles.isEmpty()) {
                 loadAndSaveBuiltInAssetThemes()
-            } else {
-                getAllThemes()
             }
+            syncRegisteredTemplates()
+            getAllThemes()
         } catch (e: Exception) {
             Result.Error("Failed to initialize themes: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Synchronizes any templates from TemplateRegistry that are not yet saved to disk.
+     */
+    private fun syncRegisteredTemplates() {
+        for (templateDef in templateRegistry.getAllTemplates()) {
+            val file = getFileForTheme(templateDef.id)
+            if (!file.exists()) {
+                saveTheme(templateDef.buildTheme())
+            }
         }
     }
 
@@ -53,15 +68,16 @@ class ThemeStorage @Inject constructor(
                 when (val result = ThemeSerializer.deserialize(json)) {
                     is Result.Success -> themes.add(result.data)
                     is Result.Error -> {
-                        // Skip unparseable files, but log error
+                        // Skip unparseable files
                     }
                     else -> {}
                 }
             }
 
             if (themes.isEmpty()) {
-                // Fallback to default theme if all files failed
-                val defaultTheme = AODTheme.createDefaultTheme()
+                // Fallback to registered templates or default
+                val defaultTheme = templateRegistry.getAllTemplates().firstOrNull()?.buildTheme()
+                    ?: AODTheme.createDefaultTheme()
                 saveTheme(defaultTheme)
                 Result.Success(listOf(defaultTheme))
             } else {
@@ -79,6 +95,12 @@ class ThemeStorage @Inject constructor(
         return try {
             val file = getFileForTheme(id)
             if (!file.exists()) {
+                // Check if it's available in TemplateRegistry
+                val registryTheme = templateRegistry.getOriginalTemplateTheme(id)
+                if (registryTheme != null) {
+                    saveTheme(registryTheme)
+                    return Result.Success(registryTheme)
+                }
                 return Result.Error("Theme not found with ID: $id")
             }
             val json = file.readText()
@@ -103,6 +125,15 @@ class ThemeStorage @Inject constructor(
         } catch (e: Exception) {
             Result.Error("Failed to save theme: ${e.message}", e)
         }
+    }
+
+    /**
+     * Resets a template back to its factory default definition from TemplateRegistry.
+     */
+    fun resetThemeToDefault(id: String): Result<AODTheme> {
+        val originalTheme = templateRegistry.getOriginalTemplateTheme(id)
+            ?: return Result.Error("Template '$id' does not have a factory default definition.")
+        return saveTheme(originalTheme)
     }
 
     /**
@@ -177,14 +208,18 @@ class ThemeStorage @Inject constructor(
             }
 
             if (loadedThemes.isEmpty()) {
-                val defaultTheme = AODTheme.createDefaultTheme()
-                saveTheme(defaultTheme)
-                loadedThemes.add(defaultTheme)
+                for (templateDef in templateRegistry.getAllTemplates()) {
+                    val theme = templateDef.buildTheme()
+                    saveTheme(theme)
+                    loadedThemes.add(theme)
+                }
             }
         } catch (e: Exception) {
-            val defaultTheme = AODTheme.createDefaultTheme()
-            saveTheme(defaultTheme)
-            loadedThemes.add(defaultTheme)
+            for (templateDef in templateRegistry.getAllTemplates()) {
+                val theme = templateDef.buildTheme()
+                saveTheme(theme)
+                loadedThemes.add(theme)
+            }
         }
         return Result.Success(loadedThemes)
     }
