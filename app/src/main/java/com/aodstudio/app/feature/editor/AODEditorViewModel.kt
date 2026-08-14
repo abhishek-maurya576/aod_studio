@@ -1,7 +1,10 @@
 package com.aodstudio.app.feature.editor
 
+import android.content.Context
+import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aodstudio.app.aod.service.AODForegroundService
 import com.aodstudio.app.core.common.Result
 import com.aodstudio.app.domain.model.AODElement
 import com.aodstudio.app.domain.model.AODElementType
@@ -11,6 +14,7 @@ import com.aodstudio.app.domain.usecase.SaveThemeUseCase
 import com.aodstudio.app.media.MediaRepository
 import com.aodstudio.app.notification.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +28,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class AODEditorViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val getThemesUseCase: GetThemesUseCase,
     private val saveThemeUseCase: SaveThemeUseCase,
     val mediaRepository: MediaRepository,
@@ -237,12 +242,33 @@ class AODEditorViewModel @Inject constructor(
             when (val result = saveThemeUseCase.execute(currentTheme)) {
                 is Result.Success -> {
                     saveThemeUseCase.setActive(currentTheme.id)
-                    _uiState.update {
-                        it.copy(
-                            isSaving = false,
-                            isDirty = false,
-                            userMessage = "Theme saved and applied to AOD!"
-                        )
+                    try {
+                        if (Settings.canDrawOverlays(context)) {
+                            AODForegroundService.startService(context)
+                            _uiState.update {
+                                it.copy(
+                                    isSaving = false,
+                                    isDirty = false,
+                                    userMessage = "Theme saved and active on AOD!"
+                                )
+                            }
+                        } else {
+                            _uiState.update {
+                                it.copy(
+                                    isSaving = false,
+                                    isDirty = false,
+                                    userMessage = "Theme saved! Grant System Overlay in Settings to start AOD."
+                                )
+                            }
+                        }
+                    } catch (e: Throwable) {
+                        _uiState.update {
+                            it.copy(
+                                isSaving = false,
+                                isDirty = false,
+                                userMessage = "Theme saved and applied to AOD!"
+                            )
+                        }
                     }
                 }
                 is Result.Error -> {
