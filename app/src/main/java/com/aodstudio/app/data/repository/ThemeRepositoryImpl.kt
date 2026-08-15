@@ -121,6 +121,6 @@ class ThemeRepositoryImpl @Inject constructor(
     }
 
     private fun refreshThemes() {
-        _themesFlow.value = themeStorage.getAllThemes()
+        _themesFlow.value = themeStorage.initializeBuiltInThemesIfNeeded()
     }
 }

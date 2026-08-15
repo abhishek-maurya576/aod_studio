@@ -37,6 +37,7 @@ class ThemeLibraryViewModel @Inject constructor(
     private val deleteThemeUseCase: DeleteThemeUseCase,
     private val resetThemeUseCase: ResetThemeUseCase,
     private val importExportThemeUseCase: ImportExportThemeUseCase,
+    private val settingsRepository: com.aodstudio.app.domain.repository.SettingsRepository,
     val templateRegistry: TemplateRegistry,
     val batteryRepository: BatteryRepository,
     val notificationRepository: NotificationRepository,
@@ -107,6 +108,7 @@ class ThemeLibraryViewModel @Inject constructor(
                     try {
                         if (Settings.canDrawOverlays(context)) {
                             AODForegroundService.startService(context)
+                            settingsRepository.setAodEnabled(true)
                             _uiState.update {
                                 it.copy(
                                     activeThemeId = themeId,
@@ -125,7 +127,7 @@ class ThemeLibraryViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 activeThemeId = themeId,
-                                userMessage = "Theme activated as active AOD"
+                                errorMessage = "Activated theme, but could not start AOD service: ${e.message}"
                             )
                         }
                     }

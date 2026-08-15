@@ -90,6 +90,9 @@ fun AODPreviewScreen(
                     AndroidView(
                         factory = { ctx ->
                             AODRenderView(ctx).apply {
+                                setBatteryRepository(viewModel.batteryRepository)
+                                setNotificationRepository(viewModel.notificationRepository)
+                                setMediaRepository(viewModel.mediaRepository)
                                 setTheme(uiState.theme!!)
                             }
                         },

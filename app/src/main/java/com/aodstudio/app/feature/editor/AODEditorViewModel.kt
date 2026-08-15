@@ -31,6 +31,7 @@ class AODEditorViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val getThemesUseCase: GetThemesUseCase,
     private val saveThemeUseCase: SaveThemeUseCase,
+    private val settingsRepository: com.aodstudio.app.domain.repository.SettingsRepository,
     val mediaRepository: MediaRepository,
     val notificationRepository: NotificationRepository
 ) : ViewModel() {
@@ -245,6 +246,7 @@ class AODEditorViewModel @Inject constructor(
                     try {
                         if (Settings.canDrawOverlays(context)) {
                             AODForegroundService.startService(context)
+                            settingsRepository.setAodEnabled(true)
                             _uiState.update {
                                 it.copy(
                                     isSaving = false,
@@ -266,7 +268,7 @@ class AODEditorViewModel @Inject constructor(
                             it.copy(
                                 isSaving = false,
                                 isDirty = false,
-                                userMessage = "Theme saved and applied to AOD!"
+                                errorMessage = "Saved theme, but could not start AOD service: ${e.message}"
                             )
                         }
                     }

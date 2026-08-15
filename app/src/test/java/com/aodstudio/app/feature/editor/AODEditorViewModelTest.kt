@@ -35,6 +35,7 @@ class AODEditorViewModelTest {
     private val context = mockk<Context>(relaxed = true)
     private val getThemesUseCase = mockk<GetThemesUseCase>()
     private val saveThemeUseCase = mockk<SaveThemeUseCase>()
+    private val settingsRepository = mockk<com.aodstudio.app.domain.repository.SettingsRepository>(relaxed = true)
     private val mediaRepository = mockk<MediaRepository>(relaxed = true)
     private val notificationRepository = mockk<NotificationRepository>(relaxed = true)
 
@@ -56,7 +57,7 @@ class AODEditorViewModelTest {
 
     @Test
     fun `loadTheme with null ID creates default theme state`() = runTest {
-        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, mediaRepository, notificationRepository)
+        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, settingsRepository, mediaRepository, notificationRepository)
         viewModel.loadTheme(null)
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -68,7 +69,7 @@ class AODEditorViewModelTest {
 
     @Test
     fun `loadTheme with valid ID loads existing theme`() = runTest {
-        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, mediaRepository, notificationRepository)
+        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, settingsRepository, mediaRepository, notificationRepository)
         viewModel.loadTheme("theme123")
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -80,7 +81,7 @@ class AODEditorViewModelTest {
 
     @Test
     fun `addElement appends new element and marks dirty`() = runTest {
-        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, mediaRepository, notificationRepository)
+        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, settingsRepository, mediaRepository, notificationRepository)
         viewModel.loadTheme("theme123")
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -94,7 +95,7 @@ class AODEditorViewModelTest {
 
     @Test
     fun `saveTheme calls saveThemeUseCase execute`() = runTest {
-        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, mediaRepository, notificationRepository)
+        val viewModel = AODEditorViewModel(context, getThemesUseCase, saveThemeUseCase, settingsRepository, mediaRepository, notificationRepository)
         viewModel.loadTheme("theme123")
         testDispatcher.scheduler.advanceUntilIdle()
 

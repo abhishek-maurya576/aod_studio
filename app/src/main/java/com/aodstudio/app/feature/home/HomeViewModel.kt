@@ -11,6 +11,7 @@ import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.domain.usecase.GetThemesUseCase
 import com.aodstudio.app.media.MediaRepository
 import com.aodstudio.app.notification.NotificationRepository
+import com.aodstudio.app.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +28,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val getThemesUseCase: GetThemesUseCase,
+    private val settingsRepository: SettingsRepository,
     val batteryRepository: BatteryRepository,
     val notificationRepository: NotificationRepository,
     val mediaRepository: MediaRepository
@@ -34,6 +36,14 @@ class HomeViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            settingsRepository.isAodEnabled.collect { isEnabled ->
+                _uiState.update { it.copy(isAodActive = isEnabled) }
+            }
+        }
+    }
 
     fun loadHomeData() {
         viewModelScope.launch {
@@ -46,22 +56,15 @@ class HomeViewModel @Inject constructor(
                 AODTheme.createDefaultTheme()
             }
 
-            val isRunning = isServiceRunning(AODForegroundService::class.java)
+            val isAodEnabled = settingsRepository.isAodEnabledSync()
 
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     activeTheme = theme,
-                    isAodActive = isRunning
+                    isAodActive = isAodEnabled
                 )
             }
         }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
-        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return manager.getRunningServices(Int.MAX_VALUE)
-            .any { it.service.className == serviceClass.name }
     }
 }

@@ -42,6 +42,7 @@ class ThemeLibraryViewModelTest {
     private val deleteThemeUseCase = mockk<DeleteThemeUseCase>()
     private val resetThemeUseCase = mockk<ResetThemeUseCase>()
     private val importExportThemeUseCase = mockk<ImportExportThemeUseCase>()
+    private val settingsRepository = mockk<com.aodstudio.app.domain.repository.SettingsRepository>(relaxed = true)
     private val templateRegistry = TemplateRegistry()
     private val batteryRepository = mockk<BatteryRepository>(relaxed = true)
     private val notificationRepository = mockk<NotificationRepository>(relaxed = true)
@@ -74,6 +75,7 @@ class ThemeLibraryViewModelTest {
             deleteThemeUseCase,
             resetThemeUseCase,
             importExportThemeUseCase,
+            settingsRepository,
             templateRegistry,
             batteryRepository,
             notificationRepository,
@@ -99,6 +101,7 @@ class ThemeLibraryViewModelTest {
             deleteThemeUseCase,
             resetThemeUseCase,
             importExportThemeUseCase,
+            settingsRepository,
             templateRegistry,
             batteryRepository,
             notificationRepository,
@@ -123,6 +126,7 @@ class ThemeLibraryViewModelTest {
             deleteThemeUseCase,
             resetThemeUseCase,
             importExportThemeUseCase,
+            settingsRepository,
             templateRegistry,
             batteryRepository,
             notificationRepository,
@@ -146,6 +150,7 @@ class ThemeLibraryViewModelTest {
             deleteThemeUseCase,
             resetThemeUseCase,
             importExportThemeUseCase,
+            settingsRepository,
             templateRegistry,
             batteryRepository,
             notificationRepository,
@@ -168,6 +173,7 @@ class ThemeLibraryViewModelTest {
             deleteThemeUseCase,
             resetThemeUseCase,
             importExportThemeUseCase,
+            settingsRepository,
             templateRegistry,
             batteryRepository,
             notificationRepository,

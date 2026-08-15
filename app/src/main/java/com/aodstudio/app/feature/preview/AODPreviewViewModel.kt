@@ -9,6 +9,10 @@ import com.aodstudio.app.core.common.Result
 import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.domain.usecase.GetThemesUseCase
 import com.aodstudio.app.domain.usecase.SaveThemeUseCase
+import com.aodstudio.app.battery.BatteryRepository
+import com.aodstudio.app.domain.repository.SettingsRepository
+import com.aodstudio.app.media.MediaRepository
+import com.aodstudio.app.notification.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +28,11 @@ import javax.inject.Inject
 @HiltViewModel
 class AODPreviewViewModel @Inject constructor(
     private val getThemesUseCase: GetThemesUseCase,
-    private val saveThemeUseCase: SaveThemeUseCase
+    private val saveThemeUseCase: SaveThemeUseCase,
+    private val settingsRepository: SettingsRepository,
+    val batteryRepository: BatteryRepository,
+    val notificationRepository: NotificationRepository,
+    val mediaRepository: MediaRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AODPreviewUiState())
@@ -55,8 +63,13 @@ class AODPreviewViewModel @Inject constructor(
             saveThemeUseCase.execute(theme)
             saveThemeUseCase.setActive(theme.id)
             if (Settings.canDrawOverlays(context)) {
-                AODForegroundService.startService(context)
-                _uiState.update { it.copy(userMessage = "Theme applied to AOD & Service active!") }
+                try {
+                    AODForegroundService.startService(context)
+                    settingsRepository.setAodEnabled(true)
+                    _uiState.update { it.copy(userMessage = "Theme applied to AOD & Service active!") }
+                } catch (e: Exception) {
+                    _uiState.update { it.copy(errorMessage = "Could not start AOD service: ${e.message}") }
+                }
             } else {
                 _uiState.update { it.copy(userMessage = "Theme set as active! Grant System Overlay in Settings to start AOD.") }
             }

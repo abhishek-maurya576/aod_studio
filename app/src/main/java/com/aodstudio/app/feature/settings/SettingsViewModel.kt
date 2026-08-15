@@ -51,15 +51,16 @@ class SettingsViewModel @Inject constructor(
         val hasOverlay = Settings.canDrawOverlays(context)
         val hasNotificationListener = isNotificationListenerEnabled()
         val isBatteryExempt = isBatteryOptimizationExempt()
-        val isServiceRunning = isServiceRunning(AODForegroundService::class.java)
+        val isAodEnabled = settingsRepository.isAodEnabledSync()
+        val hasPostNotifications = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
 
         _uiState.update {
             it.copy(
                 hasOverlayPermission = hasOverlay,
-                hasNotificationPermission = hasNotificationListener,
+                hasNotificationPermission = hasNotificationListener && hasPostNotifications,
                 isBatteryOptimizationExempt = isBatteryExempt,
-                isAodEnabled = isServiceRunning,
-                isServiceActuallyRunning = isServiceRunning,
+                isAodEnabled = isAodEnabled,
+                isServiceActuallyRunning = isAodEnabled,
                 isVivoDevice = vivoAdapter.isVivoDevice
             )
         }
@@ -75,16 +76,24 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(userMessage = "System Overlay permission required. Grant it first.") }
                 return
             }
-            AODForegroundService.startService(context)
-            _uiState.update {
-                it.copy(
-                    isAodEnabled = true,
-                    isServiceActuallyRunning = true,
-                    userMessage = "AOD Service Started"
-                )
+            try {
+                AODForegroundService.startService(context)
+                settingsRepository.setAodEnabled(true)
+                _uiState.update {
+                    it.copy(
+                        isAodEnabled = true,
+                        isServiceActuallyRunning = true,
+                        userMessage = "AOD Service Started"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(userMessage = "Failed to start AOD service: ${e.message}")
+                }
             }
         } else {
             AODForegroundService.stopService(context)
+            settingsRepository.setAodEnabled(false)
             _uiState.update {
                 it.copy(
                     isAodEnabled = false,
