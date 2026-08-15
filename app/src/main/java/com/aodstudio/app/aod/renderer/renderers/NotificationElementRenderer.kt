@@ -36,7 +36,7 @@ class NotificationElementRenderer : ElementRenderer {
             return
         }
 
-        val scale = context.scaleFactor * element.scale
+        val scale = context.scaleFactor
         val drawX = RendererUtils.getDrawX(element, context)
         val drawY = RendererUtils.getDrawY(element, context)
 

@@ -34,7 +34,7 @@ class MusicElementRenderer : ElementRenderer {
 
         val drawX = RendererUtils.getDrawX(element, context)
         val drawY = RendererUtils.getDrawY(element, context)
-        val scale = context.scaleFactor * element.scale
+        val scale = context.scaleFactor
 
         val primaryColor = RendererUtils.parseColor(element.style.color)
         val alphaInt = (element.opacity * 255).toInt().coerceIn(0, 255)

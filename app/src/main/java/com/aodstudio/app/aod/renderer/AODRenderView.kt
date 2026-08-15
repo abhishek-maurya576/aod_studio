@@ -91,13 +91,15 @@ class AODRenderView @JvmOverloads constructor(
 
     fun stopRendering() {
         isRendering = false
-        redrawHandler.removeCallbacks(redrawRunnable)
+        redrawHandler.removeCallbacksAndMessages(null)
         notificationJob?.cancel()
+        notificationJob = null
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         isRendering = true
+        redrawHandler.removeCallbacksAndMessages(null)
         redrawHandler.postDelayed(redrawRunnable, redrawIntervalMs)
         observeNotificationFlow()
     }
