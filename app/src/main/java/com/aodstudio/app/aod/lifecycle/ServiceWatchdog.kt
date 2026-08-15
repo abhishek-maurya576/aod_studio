@@ -45,17 +45,34 @@ class ServiceWatchdog : BroadcastReceiver() {
          * Called from [AODForegroundService.onTaskRemoved].
          */
         fun schedule(context: Context) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val pendingIntent = buildPendingIntent(context)
-            val triggerAtMs = SystemClock.elapsedRealtime() + AppConfig.Service.WATCHDOG_ALARM_INTERVAL_MS
+            try {
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+                val pendingIntent = buildPendingIntent(context)
+                val triggerAtMs = SystemClock.elapsedRealtime() + AppConfig.Service.WATCHDOG_ALARM_INTERVAL_MS
 
-            // setExactAndAllowWhileIdle fires even in Doze mode — critical for OriginOS survival.
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                triggerAtMs,
-                pendingIntent
-            )
-            Log.i(TAG, "Watchdog scheduled in ${AppConfig.Service.WATCHDOG_ALARM_INTERVAL_MS / 1000}s")
+                val canUseExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    alarmManager.canScheduleExactAlarms()
+                } else {
+                    true
+                }
+
+                if (canUseExact) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                        triggerAtMs,
+                        pendingIntent
+                    )
+                } else {
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                        triggerAtMs,
+                        pendingIntent
+                    )
+                }
+                Log.i(TAG, "Watchdog scheduled in ${AppConfig.Service.WATCHDOG_ALARM_INTERVAL_MS / 1000}s (exact=$canUseExact)")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to schedule watchdog alarm: ${e.message}")
+            }
         }
 
         /**

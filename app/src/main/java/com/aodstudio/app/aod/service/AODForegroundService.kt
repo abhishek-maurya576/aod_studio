@@ -1,7 +1,9 @@
 package com.aodstudio.app.aod.service
 
+import android.app.ActivityOptions
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -69,6 +71,9 @@ class AODForegroundService : Service() {
     // Main-thread Handler used to sequence USER_PRESENT cleanup before keyguard dismissal.
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    @Volatile
+    private var isScreenOff = false
+
     // ──────────────────────────────────────────────────────────────────────────
     // BroadcastReceiver — screen state events
     // Note: ACTION_SCREEN_OFF / ACTION_SCREEN_ON cannot be declared in the manifest
@@ -95,12 +100,15 @@ class AODForegroundService : Service() {
         createNotificationChannel()
         startForegroundServiceNotification()
         registerScreenReceiver()
-        startPocketDetection()
         Log.i(TAG, "AODForegroundService created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // START_STICKY alone is insufficient on OriginOS — the watchdog supplements it.
+        if (intent?.action == ACTION_RELOAD_THEME) {
+            if (isScreenOff) {
+                onScreenOff()
+            }
+        }
         return START_STICKY
     }
 
@@ -108,8 +116,6 @@ class AODForegroundService : Service() {
         super.onDestroy()
         Log.i(TAG, "AODForegroundService destroyed — performing clean shutdown")
         // Cancel the watchdog alarm on clean shutdown (user explicitly disabled AOD).
-        // onTaskRemoved arms it; onDestroy cancels it, so the alarm only fires if the OS
-        // killed us without calling onDestroy (which is what OriginOS does from recents).
         ServiceWatchdog.cancel(this)
         releaseWakeLock()
         pocketSensorManager.stopListening()
@@ -139,53 +145,60 @@ class AODForegroundService : Service() {
     // ──────────────────────────────────────────────────────────────────────────
 
     private fun onScreenOff() {
-        Log.d(TAG, "ACTION_SCREEN_OFF — acquiring WakeLock & launching AODActivity (showWhenLocked)")
+        isScreenOff = true
+        Log.d(TAG, "ACTION_SCREEN_OFF — acquiring WakeLock & launching AODActivity")
         acquireWakeLock()
+        startPocketDetection()
 
-        // 1. Launch AODActivity: Has showWhenLocked=true which Android OS requires
-        // to render above the locked Keyguard on Android 8+ / Android 16.
+        // Clean up any lingering overlay
+        overlayManager.hideOverlay()
+
+        // Launch AODActivity with showWhenLocked + turnScreenOn to wake the display over keyguard
         try {
             val aodIntent = Intent(this, com.aodstudio.app.aod.ui.AODActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_NO_ANIMATION
+                )
             }
-            startActivity(aodIntent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val options = ActivityOptions.makeBasic().apply {
+                    setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                }
+                startActivity(aodIntent, options.toBundle())
+            } else {
+                startActivity(aodIntent)
+            }
             Log.i(TAG, "AODActivity launched successfully on SCREEN_OFF")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to launch AODActivity: ${e.message}", e)
-        }
-
-        // 2. Also attach overlayManager as a secondary fallback
-        serviceScope.launch {
-            val activeThemeResult = getThemesUseCase.getActiveTheme()
-            if (activeThemeResult is Result.Success) {
-                overlayManager.showOverlay(activeThemeResult.data)
-            } else {
-                Log.e(TAG, "No active theme — cannot show AOD overlay")
+            Log.e(TAG, "Direct startActivity failed, falling back to PendingIntent: ${e.message}")
+            try {
+                val pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, com.aodstudio.app.aod.ui.AODActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                    },
+                    PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+                )
+                pendingIntent.send()
+            } catch (pe: Exception) {
+                Log.e(TAG, "PendingIntent launch failed: ${pe.message}")
             }
         }
     }
 
     private fun onScreenOn() {
-        // DO NOT hide the overlay on SCREEN_ON.
-        // On OriginOS 6, SCREEN_DIM_WAKE_LOCK is silently demoted (confirmed from logcat).
-        // The display goes to STATE_OFF despite the lock, then when the user presses power
-        // to wake it, SCREEN_ON fires. At this point the overlay SHOULD be visible (it is
-        // our AOD clock face on the lock screen). We only dismiss it in onUserPresent(),
-        // which fires after the user authenticates and the keyguard is fully dismissed.
-        //
-        // If we call hideOverlay() here, the overlay is destroyed as soon as the user
-        // wakes the screen, making the AOD flash for a frame then disappear.
-        Log.d(TAG, "ACTION_SCREEN_ON — display woke (overlay stays visible on lock screen)")
-        // Re-arm the wakelock so the display stays on while showing the AOD lock screen.
-        acquireWakeLock()
+        pocketSensorManager.stopListening()
+        Log.d(TAG, "ACTION_SCREEN_ON — display woke")
     }
 
     private fun onUserPresent() {
-        Log.d(TAG, "ACTION_USER_PRESENT — user unlocked, removing AOD overlay")
-        // USER_PRESENT fires after the keyguard is fully dismissed (biometric/PIN/pattern).
-        // This is the correct point to remove the overlay — AFTER the user has authenticated,
-        // not on SCREEN_ON which fires while the lock screen is still showing.
-        // postAtFrontOfQueue beats any pending UI frames to avoid a black-flash artifact.
+        isScreenOff = false
+        pocketSensorManager.stopListening()
+        Log.d(TAG, "ACTION_USER_PRESENT — user unlocked, releasing WakeLock")
         mainHandler.postAtFrontOfQueue {
             overlayManager.hideOverlay()
             releaseWakeLock()
@@ -248,8 +261,13 @@ class AODForegroundService : Service() {
     private fun startPocketDetection() {
         pocketSensorManager.startListening { isInPocket ->
             if (isInPocket) {
-                Log.d(TAG, "Device in pocket — suppressing AOD overlay via proximity sensor")
+                Log.d(TAG, "Device in pocket — suppressing AOD")
                 overlayManager.hideOverlay()
+            } else {
+                if (isScreenOff) {
+                    Log.d(TAG, "Device removed from pocket — restoring AOD")
+                    onScreenOff()
+                }
             }
         }
     }
@@ -328,11 +346,14 @@ class AODForegroundService : Service() {
         private const val TAG = "AODForegroundService"
         const val CHANNEL_ID = "aod_service_channel"
         const val NOTIFICATION_ID = 1001
+        const val ACTION_RELOAD_THEME = "com.aodstudio.app.ACTION_RELOAD_THEME"
         // WakeLock tag must be "<package>:<tag>" format per PowerManager documentation.
         private const val WAKELOCK_TAG = "AODStudio:DimLock"
 
         fun startService(context: Context) {
-            val intent = Intent(context, AODForegroundService::class.java)
+            val intent = Intent(context, AODForegroundService::class.java).apply {
+                action = ACTION_RELOAD_THEME
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
             } else {

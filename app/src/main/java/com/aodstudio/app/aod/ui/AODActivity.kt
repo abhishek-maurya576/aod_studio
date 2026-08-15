@@ -91,6 +91,17 @@ class AODActivity : ComponentActivity() {
                         false
                     }
                 }
+
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
+                    Log.d(TAG, "Swipe/fling detected on AODActivity — dismissing to reveal keyguard")
+                    dismissAod()
+                    return true
+                }
             }
         )
 
@@ -114,9 +125,27 @@ class AODActivity : ComponentActivity() {
         loadActiveTheme()
 
         val filter = IntentFilter(Intent.ACTION_USER_PRESENT)
-        registerReceiver(userPresentReceiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            registerReceiver(userPresentReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(userPresentReceiver, filter)
+        }
 
         Log.i(TAG, "AODActivity created with showWhenLocked=true")
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        configureWindow()
+        loadActiveTheme()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        configureWindow()
+        loadActiveTheme()
     }
 
     private fun configureWindow() {
@@ -169,7 +198,12 @@ class AODActivity : ComponentActivity() {
 
     private fun dismissAod() {
         finishAndRemoveTask()
-        overridePendingTransition(0, 0)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
+        } else {
+            @Suppress("DEPRECATION")
+            overridePendingTransition(0, 0)
+        }
     }
 
     override fun onDestroy() {
@@ -184,7 +218,7 @@ class AODActivity : ComponentActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        // Prevent accidental back button dismissal unless double tapped
+        // Prevent accidental back button dismissal unless double tapped or swiped
         dismissAod()
     }
 

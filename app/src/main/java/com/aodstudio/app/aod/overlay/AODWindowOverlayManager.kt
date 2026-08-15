@@ -81,8 +81,7 @@ class AODWindowOverlayManager @Inject constructor(
         try {
             windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-            // Double-tap gesture detector: lets the user dismiss the AOD overlay without
-            // pressing the power button, which would stop our FULL_WAKE_LOCK.
+            // Gesture detector: lets the user dismiss the AOD overlay via double-tap or swipe
             val gestureDetector = GestureDetector(
                 context,
                 object : GestureDetector.SimpleOnGestureListener() {
@@ -99,6 +98,18 @@ class AODWindowOverlayManager @Inject constructor(
                             Log.d(TAG, "Double-tap detected — ignored (setting disabled)")
                             false
                         }
+                    }
+
+                    override fun onFling(
+                        e1: MotionEvent?,
+                        e2: MotionEvent,
+                        velocityX: Float,
+                        velocityY: Float
+                    ): Boolean {
+                        // Swipe up or any fast fling to unlock / dismiss AOD overlay
+                        Log.d(TAG, "Fling / swipe gesture detected — dismissing AOD overlay to reveal lockscreen")
+                        hideOverlay()
+                        return true
                     }
                 }
             )

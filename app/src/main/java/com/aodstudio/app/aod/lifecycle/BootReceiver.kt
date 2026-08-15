@@ -26,10 +26,17 @@ class BootReceiver : BroadcastReceiver() {
         // before startForegroundService() has been dispatched to the system.
         val pendingResult = goAsync()
         try {
-            Log.i(TAG, "ACTION_BOOT_COMPLETED received — starting AODForegroundService")
-            AODForegroundService.startService(context)
+            val prefs = context.getSharedPreferences("aod_settings_prefs", Context.MODE_PRIVATE)
+            val isAodEnabled = prefs.getBoolean("aod_master_enabled", false)
+
+            if (isAodEnabled) {
+                Log.i(TAG, "ACTION_BOOT_COMPLETED received & AOD enabled — starting AODForegroundService")
+                AODForegroundService.startService(context)
+            } else {
+                Log.i(TAG, "ACTION_BOOT_COMPLETED received but AOD is disabled by user — skipping service start")
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to start AODForegroundService on boot: ${e.message}")
+            Log.e(TAG, "Failed to evaluate or start AODForegroundService on boot: ${e.message}")
         } finally {
             // Must call finish() to signal the system that async processing is done.
             pendingResult.finish()
