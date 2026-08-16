@@ -110,13 +110,25 @@ class AODActivity : ComponentActivity() {
             setNotificationRepository(notificationRepository)
             setMediaRepository(mediaRepository)
             setBackgroundColor(Color.BLACK)
+            onFingerprintTouch = {
+                Log.d(TAG, "Fingerprint zone touched on AODActivity — dismissing instantly to Keyguard")
+                dismissAod()
+            }
             setOnTouchListener { view, event ->
                 val handledByRenderView = onTouchEvent(event)
                 if (handledByRenderView) {
                     true
                 } else {
-                    gestureDetector.onTouchEvent(event)
-                    true
+                    val isFodZone = event.x in (view.width * 0.35f)..(view.width * 0.65f) &&
+                            event.y in (view.height * 0.70f)..(view.height * 0.90f)
+                    if (isFodZone && event.action == MotionEvent.ACTION_DOWN) {
+                        Log.d(TAG, "Hardware FOD zone touched — dismissing AOD instantly for native optical scan")
+                        dismissAod()
+                        true
+                    } else {
+                        gestureDetector.onTouchEvent(event)
+                        true
+                    }
                 }
             }
         }

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.CropSquare
+import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.LinearScale
 import androidx.compose.material.icons.outlined.MusicNote
@@ -67,6 +68,7 @@ fun ElementSelectorRow(
                 AODElementType.SHAPE, AODElementType.RING, AODElementType.PROGRESS -> Icons.Outlined.CropSquare
                 AODElementType.LINE -> Icons.Outlined.LinearScale
                 AODElementType.GROUP -> Icons.Outlined.Category
+                AODElementType.FINGERPRINT -> Icons.Outlined.Fingerprint
             }
 
             FilterChip(

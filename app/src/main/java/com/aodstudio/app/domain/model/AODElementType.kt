@@ -18,5 +18,6 @@ enum class AODElementType {
     LINE,
     RING,
     PROGRESS,
-    GROUP
+    GROUP,
+    FINGERPRINT
 }

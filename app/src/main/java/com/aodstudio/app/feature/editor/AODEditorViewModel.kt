@@ -194,9 +194,13 @@ class AODEditorViewModel @Inject constructor(
             AODElementType.BATTERY -> 1100f
             AODElementType.NOTIFICATION -> 1180f
             AODElementType.MUSIC -> 1260f
+            AODElementType.FINGERPRINT -> 1900f
             else -> 1340f
         }
         val defaultFontSize = if (type == AODElementType.NOTIFICATION) 16f else 24f
+        val defaultColor = if (type == AODElementType.FINGERPRINT) "#5EC98A" else "#FFFFFF"
+        val defaultWidth = if (type == AODElementType.FINGERPRINT) 120f else 200f
+        val defaultHeight = if (type == AODElementType.FINGERPRINT) 120f else 100f
         val existingCount = currentTheme.elements.count { it.type == type }
         val baseName = type.name.lowercase().replaceFirstChar { it.uppercase() }
         val newName = if (existingCount > 0) "$baseName ${existingCount + 1}" else baseName
@@ -206,7 +210,13 @@ class AODEditorViewModel @Inject constructor(
             name = newName,
             x = 540f,
             y = defaultY,
-            style = com.aodstudio.app.domain.model.AODStyle(fontSize = defaultFontSize)
+            width = defaultWidth,
+            height = defaultHeight,
+            style = com.aodstudio.app.domain.model.AODStyle(
+                fontSize = defaultFontSize,
+                color = defaultColor,
+                strokeWidth = 2.5f
+            )
         )
         val updatedElements = currentTheme.elements + newElem
         _uiState.update {

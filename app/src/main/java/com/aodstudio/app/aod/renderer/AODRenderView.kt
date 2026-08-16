@@ -109,8 +109,37 @@ class AODRenderView @JvmOverloads constructor(
         stopRendering()
     }
 
+    var onFingerprintTouch: (() -> Unit)? = null
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val theme = currentTheme ?: return false
+
+        val canvasW = if (theme.canvas.width > 0) theme.canvas.width.toFloat() else 1080f
+        val canvasH = if (theme.canvas.height > 0) theme.canvas.height.toFloat() else 2400f
+        val scaleX = if (width > 0) width.toFloat() / canvasW else 1f
+        val scaleY = if (height > 0) height.toFloat() / canvasH else 1f
+        val uniformScale = min(scaleX, scaleY)
+        val offsetX = (width.toFloat() - (canvasW * uniformScale)) / 2f
+        val offsetY = (height.toFloat() - (canvasH * uniformScale)) / 2f
+        val currentTimeMs = System.currentTimeMillis()
+        val burnInOffset = burnInManager.calculateOffset(currentTimeMs)
+
+        // 1. Check if FINGERPRINT element was touched
+        val fpElement = theme.elements.firstOrNull { it.type == AODElementType.FINGERPRINT && it.visibility }
+        if (fpElement != null) {
+            val fpDrawX = offsetX + (fpElement.x + burnInOffset.offsetX) * uniformScale
+            val fpDrawY = offsetY + (fpElement.y + burnInOffset.offsetY) * uniformScale
+            val touchRadius = (fpElement.width / 2f * uniformScale * fpElement.scale).coerceAtLeast(100f)
+
+            if (kotlin.math.hypot(event.x - fpDrawX, event.y - fpDrawY) <= touchRadius) {
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    onFingerprintTouch?.invoke()
+                }
+                return true
+            }
+        }
+
+        // 2. Check MUSIC transport & timeline controls
         val musicElement = theme.elements.firstOrNull { it.type == AODElementType.MUSIC && it.visibility }
             ?: return false
 
@@ -119,19 +148,7 @@ class AODRenderView @JvmOverloads constructor(
             return false
         }
 
-        val canvasW = if (theme.canvas.width > 0) theme.canvas.width.toFloat() else 1080f
-        val canvasH = if (theme.canvas.height > 0) theme.canvas.height.toFloat() else 2400f
-
-        val scaleX = if (width > 0) width.toFloat() / canvasW else 1f
-        val scaleY = if (height > 0) height.toFloat() / canvasH else 1f
-        val uniformScale = min(scaleX, scaleY)
         val effectiveScale = uniformScale * musicElement.scale
-
-        val offsetX = (width.toFloat() - (canvasW * uniformScale)) / 2f
-        val offsetY = (height.toFloat() - (canvasH * uniformScale)) / 2f
-
-        val currentTimeMs = System.currentTimeMillis()
-        val burnInOffset = burnInManager.calculateOffset(currentTimeMs)
 
         val drawX = offsetX + (musicElement.x + burnInOffset.offsetX) * uniformScale
         val drawY = offsetY + (musicElement.y + burnInOffset.offsetY) * uniformScale
