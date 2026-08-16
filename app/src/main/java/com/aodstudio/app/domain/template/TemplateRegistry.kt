@@ -9,6 +9,7 @@ import com.aodstudio.app.domain.template.definitions.NeonDigitalTemplate
 import com.aodstudio.app.domain.template.definitions.NeonPulseTemplate
 import com.aodstudio.app.domain.template.definitions.OrbitRadialTemplate
 import com.aodstudio.app.domain.template.definitions.PixelFlexTemplate
+import com.aodstudio.app.domain.template.definitions.RadialOrbitChronographTemplate
 import com.aodstudio.app.domain.template.definitions.RetroDigitalTemplate
 import com.aodstudio.app.domain.template.definitions.TypographyStackedTemplate
 import java.util.concurrent.CopyOnWriteArrayList
@@ -31,6 +32,7 @@ class TemplateRegistry @Inject constructor() {
                 RetroDigitalTemplate,
                 TypographyStackedTemplate,
                 OrbitRadialTemplate,
+                RadialOrbitChronographTemplate,
                 NeonPulseTemplate,
                 PixelFlexTemplate,
                 FadingDashTemplate,

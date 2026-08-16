@@ -30,6 +30,7 @@ class TemplateRegistryTest {
         assertTrue("Should contain Minimal Orbit", templates.any { it.id == "builtin_minimal_orbit" })
         assertTrue("Should contain Digital Bold", templates.any { it.id == "builtin_digital_bold" })
         assertTrue("Should contain Neon Digital", templates.any { it.id == "builtin_neon_digital" })
+        assertTrue("Should contain Radial Orbit Chrono", templates.any { it.id == "builtin_radial_orbit_chrono" })
     }
 
     @Test

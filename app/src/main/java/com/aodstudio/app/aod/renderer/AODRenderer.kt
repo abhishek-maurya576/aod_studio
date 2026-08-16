@@ -6,11 +6,13 @@ import com.aodstudio.app.aod.renderer.renderers.AnalogClockElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.BatteryElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.ClockElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.DateElementRenderer
+import com.aodstudio.app.aod.renderer.renderers.FingerprintElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.GroupElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.ImageElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.MusicElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.NotificationElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.RadialClockElementRenderer
+import com.aodstudio.app.aod.renderer.renderers.RadialOrbitClockElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.ShapeElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.TextElementRenderer
 import com.aodstudio.app.aod.renderer.renderers.TypographyClockElementRenderer
@@ -33,6 +35,7 @@ class AODRenderer {
     private val analogClockRenderer = AnalogClockElementRenderer()
     private val typographyClockRenderer = TypographyClockElementRenderer()
     private val radialClockRenderer = RadialClockElementRenderer()
+    private val radialOrbitClockRenderer = RadialOrbitClockElementRenderer()
     private val dateRenderer = DateElementRenderer()
     private val batteryRenderer = BatteryElementRenderer()
     private val shapeRenderer = ShapeElementRenderer()
@@ -40,6 +43,7 @@ class AODRenderer {
     private val musicRenderer = MusicElementRenderer()
     private val imageRenderer = ImageElementRenderer()
     private val groupRenderer = GroupElementRenderer()
+    private val fingerprintRenderer = FingerprintElementRenderer()
     private val animationEngine = AnimationEngine()
 
     /**
@@ -99,6 +103,7 @@ class AODRenderer {
                 when (element.properties["clockStyle"]?.uppercase()) {
                     "ANALOG" -> analogClockRenderer
                     "TYPOGRAPHY", "STACKED" -> typographyClockRenderer
+                    "RADIAL_ORBIT", "ORBIT_CHRONO" -> radialOrbitClockRenderer
                     "RADIAL", "ORBIT" -> radialClockRenderer
                     else -> clockRenderer
                 }
@@ -109,6 +114,7 @@ class AODRenderer {
             AODElementType.MUSIC -> musicRenderer
             AODElementType.IMAGE -> imageRenderer
             AODElementType.GROUP -> groupRenderer
+            AODElementType.FINGERPRINT -> fingerprintRenderer
             AODElementType.SHAPE, AODElementType.LINE, AODElementType.RING, AODElementType.PROGRESS -> shapeRenderer
             else -> textRenderer
         }
