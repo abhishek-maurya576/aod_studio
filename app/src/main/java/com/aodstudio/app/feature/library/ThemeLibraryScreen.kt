@@ -1,5 +1,6 @@
 package com.aodstudio.app.feature.library
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,13 +42,13 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -85,7 +86,7 @@ import com.aodstudio.app.ui.theme.Tertiary
 /**
  * Template Library Screen — dynamic template discovery grid, live card rendering previews,
  * auto-refreshing pool on resume, category filtering, customized template indicators,
- * 3-dot overflow menu with Reset to Default, and bridged Apply/Active controls.
+ * styled top-right action menu, 3-dot card overflow menu with Reset to Default, and bridged Apply/Active controls.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,6 +99,7 @@ fun ThemeLibraryScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var themeToDelete by remember { mutableStateOf<AODTheme?>(null) }
+    var topMenuExpanded by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // Auto-refresh themes whenever returning from the editor or resuming the screen
@@ -144,19 +146,80 @@ fun ThemeLibraryScreen(
                         )
                     }
                 },
+                actions = {
+                    Box(modifier = Modifier.padding(end = 10.dp)) {
+                        // Outstanding 3-Dot Container Button with surface glow & border
+                        Surface(
+                            onClick = { topMenuExpanded = true },
+                            shape = RoundedCornerShape(12.dp),
+                            color = SurfaceContainer,
+                            border = BorderStroke(1.dp, Color(0xFF383838)),
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MoreVert,
+                                    contentDescription = "Library Options",
+                                    tint = Primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        DropdownMenu(
+                            expanded = topMenuExpanded,
+                            onDismissRequest = { topMenuExpanded = false },
+                            modifier = Modifier.background(SurfaceVariant)
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "Create New Template",
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Add,
+                                        contentDescription = null,
+                                        tint = Primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                },
+                                onClick = {
+                                    topMenuExpanded = false
+                                    onNavigateToEditor(null)
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "Refresh Library",
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.RestartAlt,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                },
+                                onClick = {
+                                    topMenuExpanded = false
+                                    viewModel.loadThemes()
+                                }
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onNavigateToEditor(null) },
-                containerColor = Primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(imageVector = Icons.Outlined.Add, contentDescription = "Create Template")
-            }
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
