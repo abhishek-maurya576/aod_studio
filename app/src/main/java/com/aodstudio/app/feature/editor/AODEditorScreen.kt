@@ -2,16 +2,20 @@ package com.aodstudio.app.feature.editor
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -43,6 +47,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -55,14 +61,16 @@ import com.aodstudio.app.aod.renderer.AODRenderView
 import com.aodstudio.app.domain.model.AODElementType
 import com.aodstudio.app.feature.editor.components.PropertyPanel
 import com.aodstudio.app.ui.theme.Primary
+import com.aodstudio.app.ui.theme.SurfaceContainer
 
 /**
  * AOD Editor Screen — interactive visual editor for building and customizing AOD themes.
  *
  * Features:
+ *   - Device-Proportional Phone Frame: Visual screen boundaries (bezel border, shadow, camera punch-hole)
+ *     so the user can clearly see left, right, top, and bottom display borders when positioning elements.
  *   - Long-press / tap full-screen preview with touch capture overlay and hardware BackHandler.
- *   - Top Section (45% height): Expanded & Centered live preview canvas.
- *   - Bottom Section (55% height): Modular Property Panel with Layer Selector, Position Presets, Element Controls.
+ *   - Modular Property Panel with Layer Selector, Position Presets, Element Controls.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,85 +196,116 @@ fun AODEditorScreen(
                     .padding(innerPadding)
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                // ─── 1. Top Section: Preview Canvas (Tap & Hold for Full Preview) ───
+                // ─── 1. Top Section: Phone Preview Screen with Visible Boundaries ───
                 Box(
                     modifier = Modifier
-                        .weight(0.45f)
+                        .weight(0.48f)
                         .fillMaxWidth()
-                        .background(Color.Black),
+                        .background(SurfaceContainer)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(color = Primary)
                     } else {
                         uiState.theme?.let { currentTheme ->
-                            AndroidView(
-                                factory = { context ->
-                                    AODRenderView(context).apply {
-                                        setMediaRepository(viewModel.mediaRepository)
-                                        setNotificationRepository(viewModel.notificationRepository)
-                                        setTheme(currentTheme)
-                                    }
-                                },
-                                update = { renderView ->
-                                    renderView.setMediaRepository(viewModel.mediaRepository)
-                                    renderView.setNotificationRepository(viewModel.notificationRepository)
-                                    renderView.setTheme(currentTheme)
-                                },
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            val canvasW = if (currentTheme.canvas.width > 0) currentTheme.canvas.width.toFloat() else 1080f
+                            val canvasH = if (currentTheme.canvas.height > 0) currentTheme.canvas.height.toFloat() else 2400f
+                            val phoneAspectRatio = canvasW / canvasH
 
-                            // Touch overlay to reliably intercept tap and long-press gestures
+                            // Phone Device Frame with explicit Screen Boundaries
                             Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .pointerInput(Unit) {
-                                        detectTapGestures(
-                                            onLongPress = {
-                                                isFullPreviewActive = true
-                                            },
-                                            onTap = {
-                                                isFullPreviewActive = true
-                                            }
+                                    .fillMaxHeight()
+                                    .aspectRatio(phoneAspectRatio)
+                                    .shadow(elevation = 10.dp, shape = RoundedCornerShape(22.dp))
+                                    .border(
+                                        width = 1.5.dp,
+                                        color = Color(0xFF383838),
+                                        shape = RoundedCornerShape(22.dp)
+                                    )
+                                    .clip(RoundedCornerShape(22.dp))
+                                    .background(Color.Black)
+                            ) {
+                                // Live AOD Canvas RenderView scaled to 100% of device frame
+                                AndroidView(
+                                    factory = { context ->
+                                        AODRenderView(context).apply {
+                                            setMediaRepository(viewModel.mediaRepository)
+                                            setNotificationRepository(viewModel.notificationRepository)
+                                            setTheme(currentTheme)
+                                        }
+                                    },
+                                    update = { renderView ->
+                                        renderView.setMediaRepository(viewModel.mediaRepository)
+                                        renderView.setNotificationRepository(viewModel.notificationRepository)
+                                        renderView.setTheme(currentTheme)
+                                    },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                // Camera punch hole indicator at top center
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 6.dp)
+                                        .size(8.dp)
+                                        .align(Alignment.TopCenter)
+                                        .background(Color(0xFF222222), shape = CircleShape)
+                                        .border(0.5.dp, Color(0xFF3A3A3A), CircleShape)
+                                )
+
+                                // Touch overlay to capture tap and long-press gestures
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .pointerInput(Unit) {
+                                            detectTapGestures(
+                                                onLongPress = {
+                                                    isFullPreviewActive = true
+                                                },
+                                                onTap = {
+                                                    isFullPreviewActive = true
+                                                }
+                                            )
+                                        }
+                                )
+
+                                // Visual hint badge indicating tap/hold to preview
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color.Black.copy(alpha = 0.7f),
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(6.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Visibility,
+                                            contentDescription = null,
+                                            tint = Primary,
+                                            modifier = Modifier.size(10.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(
+                                            text = "Preview",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontSize = 9.sp
                                         )
                                     }
-                            )
-
-                            // Visual hint pill indicating tap/hold to preview full-screen
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.Black.copy(alpha = 0.65f),
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(8.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Visibility,
-                                        contentDescription = null,
-                                        tint = Primary,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "Tap to Preview",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 10.sp
-                                    )
                                 }
                             }
                         }
                     }
                 }
 
-                // ─── 2. Bottom Section: Editor Panel (Constrain & Scroll: 55% Height) ───
+                // ─── 2. Bottom Section: Editor Panel (Constrain & Scroll: 52% Height) ───
                 Box(
                     modifier = Modifier
-                        .weight(0.55f)
+                        .weight(0.52f)
                         .fillMaxWidth()
                 ) {
                     PropertyPanel(
