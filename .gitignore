@@ -29,4 +29,6 @@ Thumbs.db
 # Log files
 *.log
 
+# Internal docs & notes
+docs/
 work_summary.md

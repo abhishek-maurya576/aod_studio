@@ -1,59 +1,71 @@
 # AOD Studio
 
-**AOD Studio** is a custom Always-On Display (AOD) design engine and visual editor built for Android (specifically optimized for **Vivo OriginOS 6** on Android 16). It features a real-time Canvas rendering pipeline, interactive drag-and-drop theme editor, built-in theme library, system hardware monitoring (battery, notifications, media session), and an AMOLED burn-in protection engine.
+A custom Always-On Display (AOD) engine and visual theme editor for Android. Built with Jetpack Compose, a dedicated 2D Canvas rendering pipeline, hardware state monitors (battery, media, notifications), and AMOLED burn-in protection.
 
 ---
 
-## Technical Features
+## Screenshots
 
-### Real-Time Canvas Rendering Engine
-- **Custom Android View Renderer (`AODRenderView`):** Executes high-performance 2D Canvas rendering decoupled from main UI loops.
-- **Battery-Friendly 1Hz Frame Rate Capping:** Throttles redraw cycles to 1 Hz (1000ms minimum interval) to maximize AMOLED power efficiency.
-- **12 Dynamic Element Sub-Renderers:**
-  - **Digital Clock:** Configurable 12h/24h formats (`HH:mm`, `hh:mm a`) with custom typography weights (`THIN`, `MEDIUM`, `BOLD`).
-  - **Analog Clock:** Face markers (ticks/dots), hour, minute, and second hands.
-  - **Typography & Radial Orbit Clocks:** Vertical stacked digits and orbital ring dial tracks.
-  - **Date Display:** Exception-safe date formatting (`EEE • MMM dd`, `EEEE, dd MMMM`).
-  - **Battery Monitoring:** Zero-polling `BroadcastReceiver` tracking battery percentage, charging state, and plugged mode (AC/USB/Wireless).
-  - **Privacy-First Notifications:** Listens to `NotificationListenerService` callbacks storing only minimal metadata (package name, timestamp, category). Message text is not stored.
-  - **Media Session Playback:** Direct integration with Android `MediaController` / `MediaSessionManager` for track title, artist, album, and playing state.
-  - **Shapes, Images & Group Containers:** Support for vector graphics, decorative frames, and nested element grouping.
+> Place app screenshots in the [`screenshots/`](screenshots/) directory.
+
+| Home & Status | Template Library | Visual Editor | Fullscreen Preview |
+| :---: | :---: | :---: | :---: |
+| ![Home Screen](screenshots/home_screen.jpg) | ![Template Library](screenshots/library_screen.jpg) | ![Visual Editor](screenshots/editor_screen.jpg) | ![Fullscreen Preview](screenshots/preview_screen.jpg) |
 
 ---
 
-### Interactive Visual Editor
-- **Live Canvas Preview:** Instant real-time rendering of elements as properties change.
-- **Property Inspector Panel:** Sliders for X/Y coordinates (0–1080px / 0–2400px), font size (12–120sp), hex color text input (`#RRGGBB`), and element deletion.
-- **Snap-to-Center Alignment Guides:** Automated snapping to 540f horizontal / 1200f vertical canvas center within a 20px threshold.
-- **Undo / Redo History Stack:** Full state snapshot history with `undo()` and `redo()` support.
-- **Layering & Z-Index Reordering:** Move elements up and down in rendering order.
+## Core Features
+
+### 1. Template Library & Pool
+- **Dynamic Category Filtering:** Filter templates by category (Orbit, Minimal, Digital, Typography, Retro, Neon, Custom). Adding a new template automatically populates its category with zero UI changes.
+- **Live Card Previews:** Each template card runs a live miniature `AODRenderView` preview canvas.
+- **Customized Badges:** Built-in templates display a `CUSTOMIZED` badge when user modifications deviate from the factory blueprint.
+- **Single-Click Apply:** Directly applies the theme and starts the background AOD service with active status feedback.
+- **Library Management:** Top-right action menu for template creation, refresh, and restoring default blueprints.
+
+### 2. Interactive Visual Theme Editor
+- **Device-Proportional Phone Frame:** The editor preview canvas matches exact phone proportions (`9:20`) with physical screen boundaries (bezel, rounded corners, front camera punch-hole) for unambiguous element placement.
+- **Instant Fullscreen AMOLED Preview:** Tap the TopAppBar preview icon or tap/long-press the phone frame to launch a true `#000000` AMOLED fullscreen preview.
+- **Modular Property Panel:** Tailored controls for each element type:
+  - Layer selection and element deletion
+  - X / Y coordinate sliders with center alignment snap guides
+  - Element scale and rotation
+  - Color picker and opacity
+  - Typography style, weight, and font size
+  - Notification icon scale slider and detailed text truncation
+  - Battery layout variants (horizontal, vertical, percentage)
+- **Undo / Redo Stack:** Full historical snapshot stack.
+
+### 3. Clock Elements & Renderers
+- **Radial Orbit Chronograph:** Dual concentric rotating dials (inner minutes dial, outer seconds dial) rotating with millisecond precision into a dual-chamber stadium capsule, flanked by large hour digits and date/day stack.
+- **Comic Stack:** Bold comic-style yellow stacked time with angled day tag and circled date badge.
+- **Minimal Outline:** Sleek outline-only stacked digits with vertical date pill.
+- **Digital Bold & Retro:** Clean 12h/24h digital formats with custom font weights.
+- **Minimal Analog:** Vector clock face with dial ticks and rotating hands.
+- **Hardware Widgets:** Battery percentage, compact media playback controller, privacy-first notification badges, and vector fingerprint scanner.
+
+### 4. AMOLED Burn-In Protection
+- **Orbital Pixel Shift:** Periodic 5-minute x/y coordinate shifts along a smooth circular orbital trajectory bounded strictly within `±4px`.
+- **Subpixel Opacity Capping:** Caps static element alpha to max `85%` (`0.85f`) to prevent static subpixel wear.
+
+### 5. Lockscreen Overlay & Service
+- **Screen-Off Lifecycle:** `AODForegroundService` listens for `ACTION_SCREEN_OFF` broadcasts and displays the AMOLED lockscreen surface via `AODWindowOverlayManager` (`TYPE_APPLICATION_OVERLAY`).
+- **Touch Dismissal & Security:** Tap-anywhere or fingerprint press dismisses the overlay and returns to the system lock screen.
 
 ---
 
-### AMOLED Burn-In Protection Engine
-- **Periodic Pixel Shift (`BurnInManager`):** Calculates 5-minute periodic x/y pixel shifts along a smooth circular orbital trajectory bounded strictly within max `±4px` (`BURN_IN_MAX_OFFSET_PX`).
-- **Subpixel Opacity Capping:** Automatically caps static element alpha to max `85%` (`0.85f`) to prevent static subpixel degradation.
+## Tech Stack
 
----
-
-### System Activation & Vivo OriginOS 6 Optimization
-- **System Window Overlay (`AODWindowOverlayManager`):** Utilizes `TYPE_APPLICATION_OVERLAY` with lockscreen flags (`FLAG_SHOW_WHEN_LOCKED`, `FLAG_DISMISS_KEYGUARD`, `FLAG_KEEP_SCREEN_ON`).
-- **Display Cutout Notch Support:** Configured with `LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES` for edge-to-edge pure `#000000` AMOLED black rendering on Vivo T4 Pro.
-- **Foreground Service (`AODForegroundService`):** Declared with `foregroundServiceType="specialUse"` (Android 14+ / 16 compatible) with `ACTION_SCREEN_OFF` / `ACTION_SCREEN_ON` broadcast receivers for auto-display when device locks.
-
----
-
-## Architecture & Technology Stack
-
-| Layer | Technology |
+| Component | Technology |
 | :--- | :--- |
 | **Language** | Kotlin 2.3.21 |
-| **Build System** | Android Gradle Plugin 9.3.1 |
 | **UI Framework** | Jetpack Compose (Compose BOM 2026.06.00) |
-| **Architecture Pattern** | Clean Architecture + MVVM |
+| **Rendering** | Custom 2D Android Canvas (`AODRenderView`) |
+| **Architecture** | Clean Architecture + MVVM |
 | **Dependency Injection** | Hilt 2.60.1 |
-| **Persistence** | Jetpack DataStore + Room 2.7.0 + Kotlinx Serialization |
-| **Testing** | JUnit4 + MockK + Coroutines Test |
+| **Persistence** | DataStore + Internal Storage JSON |
+| **Target SDK** | Android 16 (API 36) |
+| **Minimum SDK** | Android 10 (API 29) |
 
 ---
 
@@ -62,60 +74,46 @@
 ```text
 app/src/main/java/com/aodstudio/app/
 ├── aod/
-│   ├── lifecycle/          # BurnInManager, BurnInOffset, BootReceiver
-│   ├── overlay/            # AODWindowOverlayManager (TYPE_APPLICATION_OVERLAY)
-│   ├── renderer/           # AODRenderer pipeline & sub-renderers (Clock, Date, Battery, etc.)
-│   └── service/            # AODForegroundService (specialUse)
-├── battery/                # BatteryRepository & Intent.ACTION_BATTERY_CHANGED receiver
-├── config/                 # ThemeConfig tokens & AppConfig constants
+│   ├── lifecycle/          # BurnInManager, BootReceiver
+│   ├── overlay/            # AODWindowOverlayManager (Window overlay)
+│   ├── renderer/           # AODRenderer pipeline and Canvas element renderers
+│   └── service/            # AODForegroundService (Screen off/on listener)
+├── battery/                # BatteryRepository and state receiver
+├── config/                 # ThemeConfig tokens and AppConfig constants
 ├── domain/
-│   ├── model/              # AODTheme, AODElement, AODCanvas, AODStyle, ThemeSerializer
-│   ├── repository/         # ThemeRepository contract
-│   └── usecase/            # GetThemes, SaveTheme, DeleteTheme, DuplicateTheme, ImportExportTheme
+│   ├── model/              # AODTheme, AODElement, AODCanvas, AODStyle
+│   ├── template/           # TemplateRegistry and TemplateDefinition blueprints
+│   └── usecase/            # GetThemes, SaveTheme, DeleteTheme, ResetThemeUseCase
 ├── feature/
+│   ├── clock/radial/       # RadialOrbitClockElement and RadialOrbitTokens
 │   ├── editor/             # AODEditorScreen, AODEditorViewModel, PropertyPanel
-│   ├── home/               # HomeScreen UI & AOD status cards
-│   ├── library/            # ThemeLibraryScreen grid, ViewModel & category filter tabs
-│   └── settings/           # SettingsScreen permission toggles & service switch
-├── media/                  # MediaRepository & MediaController session listeners
-├── navigation/             # Navigation Compose (AODNavHost, Routes)
-└── notification/           # AODNotificationListenerService & NotificationRepository
+│   ├── home/               # HomeScreen and AOD service toggle
+│   ├── library/            # ThemeLibraryScreen, ThemeLibraryViewModel, TemplateCard
+│   └── settings/           # SettingsScreen and permissions
+├── media/                  # MediaRepository and MediaSession listener
+└── notification/           # NotificationRepository and NotificationListenerService
 ```
 
 ---
 
-## Getting Started
+## Build & Installation
 
-### Prerequisites
-- JDK 17 (or Android Studio JBR)
-- Android SDK 36 (Android 16 / OriginOS 6)
-- Connected Android Device or Emulator (ADB)
-
-### Building the Project
-
-Assemble the debug APK:
+### 1. Build Debug APK
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 .\gradlew.bat assembleDebug
 ```
 
-The compiled APK will be generated at:
+The APK will be generated at:
 `app/build/outputs/apk/debug/app-debug.apk`
 
----
-
-### Running Unit Tests
-
-Run the complete 56-test regression suite:
+### 2. Run Tests
 
 ```powershell
 .\gradlew.bat test
 ```
 
----
-
-### Installing on Device via ADB
+### 3. Install on Device via ADB
 
 ```powershell
 adb install -r "app\build\outputs\apk\debug\app-debug.apk"
@@ -123,6 +121,10 @@ adb install -r "app\build\outputs\apk\debug\app-debug.apk"
 
 ---
 
+## Author
+
+**Abhishek Maurya**
+
 ## License
 
-Copyright (c) 2026 Abhishek Maurya. Released under the MIT License.
+MIT License.
