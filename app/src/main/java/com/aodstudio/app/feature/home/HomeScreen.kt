@@ -1,10 +1,14 @@
 package com.aodstudio.app.feature.home
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +16,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,26 +32,33 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.aodstudio.app.aod.renderer.AODRenderView
@@ -53,12 +66,15 @@ import com.aodstudio.app.config.ThemeConfig
 import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.ui.theme.Primary
 import com.aodstudio.app.ui.theme.Secondary
+import com.aodstudio.app.ui.theme.SurfaceContainer
 import com.aodstudio.app.ui.theme.SurfaceVariant
 import com.aodstudio.app.ui.theme.Tertiary
+import kotlinx.coroutines.launch
 
 /**
  * Home screen — main landing page of AOD Studio.
- * Renders the actual active theme dynamically via AODRenderView with live system data.
+ * Features a device-framed live AOD preview card with animated swipe-down reveal & tap to edit,
+ * quick action buttons, and active status monitor.
  */
 @Composable
 fun HomeScreen(
@@ -101,7 +117,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(ThemeConfig.Spacing.XL.dp))
 
-        // ─── AOD Preview Card ──────────────────────────────────────
+        // ─── AOD Preview Card with Animated Swipe-Down & Tap ───────
         AODPreviewCard(
             activeTheme = uiState.activeTheme,
             isLoading = uiState.isLoading,
@@ -152,7 +168,8 @@ fun HomeScreen(
 }
 
 /**
- * Preview card that renders live AODRenderView with the active theme.
+ * Preview card that renders live AODRenderView inside an authentic device-proportional phone frame.
+ * Features an animated swipe-down drag physics & reveal transition to smoothly open the editor.
  */
 @Composable
 private fun AODPreviewCard(
@@ -161,49 +178,217 @@ private fun AODPreviewCard(
     viewModel: HomeViewModel,
     onClick: () -> Unit
 ) {
+    val dragOffsetY = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(380.dp)
+            .height(390.dp)
+            .pointerInput(Unit) {
+                detectVerticalDragGestures(
+                    onDragStart = {},
+                    onDragEnd = {
+                        if (dragOffsetY.value > 70f) {
+                            coroutineScope.launch {
+                                dragOffsetY.animateTo(
+                                    targetValue = 200f,
+                                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                                )
+                                onClick()
+                                dragOffsetY.snapTo(0f)
+                            }
+                        } else {
+                            coroutineScope.launch {
+                                dragOffsetY.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    )
+                                )
+                            }
+                        }
+                    },
+                    onDragCancel = {
+                        coroutineScope.launch {
+                            dragOffsetY.animateTo(0f, spring())
+                        }
+                    },
+                    onVerticalDrag = { change, dragAmount ->
+                        if (dragAmount > 0 || dragOffsetY.value > 0f) {
+                            change.consume()
+                            val newY = (dragOffsetY.value + dragAmount * 0.7f).coerceIn(0f, 220f)
+                            coroutineScope.launch {
+                                dragOffsetY.snapTo(newY)
+                            }
+                        }
+                    }
+                )
+            }
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(ThemeConfig.Radius.XL.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Black),
-        elevation = CardDefaults.cardElevation(defaultElevation = ThemeConfig.Elevation.MD.dp)
+        colors = CardDefaults.cardColors(containerColor = SurfaceContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = 12.dp, horizontal = 16.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(color = Primary)
-            } else {
-                activeTheme?.let { theme ->
-                    AndroidView(
-                        factory = { context ->
-                            AODRenderView(context).apply {
-                                setBatteryRepository(viewModel.batteryRepository)
-                                setNotificationRepository(viewModel.notificationRepository)
-                                setMediaRepository(viewModel.mediaRepository)
-                                setTheme(theme)
-                            }
-                        },
-                        update = { renderView ->
-                            renderView.setTheme(theme)
-                        },
-                        modifier = Modifier.fillMaxSize()
+            // Pull-down reveal banner behind/above the phone frame
+            val revealAlpha = (dragOffsetY.value / 60f).coerceIn(0f, 1f)
+            if (revealAlpha > 0.05f) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 4.dp)
+                        .graphicsLayer { alpha = revealAlpha }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Edit,
+                        contentDescription = null,
+                        tint = Primary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Release to Edit Theme",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
                     )
                 }
             }
 
-            // Corner label
-            Text(
-                text = "Live Theme • Tap to Edit",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.5f),
+            if (isLoading) {
+                CircularProgressIndicator(color = Primary)
+            } else {
+                activeTheme?.let { theme ->
+                    val canvasW = if (theme.canvas.width > 0) theme.canvas.width.toFloat() else 1080f
+                    val canvasH = if (theme.canvas.height > 0) theme.canvas.height.toFloat() else 2400f
+                    val phoneAspectRatio = canvasW / canvasH
+
+                    // Device-Proportional Phone Frame with swipe-down animated displacement
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .aspectRatio(phoneAspectRatio)
+                            .graphicsLayer {
+                                translationY = dragOffsetY.value
+                                val scaleFactor = 1f - (dragOffsetY.value / 3000f)
+                                scaleX = scaleFactor
+                                scaleY = scaleFactor
+                            }
+                            .shadow(elevation = 10.dp, shape = RoundedCornerShape(22.dp))
+                            .border(
+                                width = 1.5.dp,
+                                color = Color(0xFF383838),
+                                shape = RoundedCornerShape(22.dp)
+                            )
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(Color.Black)
+                    ) {
+                        // Live AOD Canvas RenderView scaled to 100% of device frame
+                        AndroidView(
+                            factory = { context ->
+                                AODRenderView(context).apply {
+                                    setBatteryRepository(viewModel.batteryRepository)
+                                    setNotificationRepository(viewModel.notificationRepository)
+                                    setMediaRepository(viewModel.mediaRepository)
+                                    setTheme(theme)
+                                }
+                            },
+                            update = { renderView ->
+                                renderView.setTheme(theme)
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        // Camera punch-hole indicator at top center
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .size(7.dp)
+                                .align(Alignment.TopCenter)
+                                .background(Color(0xFF222222), shape = CircleShape)
+                                .border(0.5.dp, Color(0xFF3A3A3A), CircleShape)
+                        )
+
+                        // Gesture interceptor overlay on the phone frame for tap & swipe-down
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .pointerInput(Unit) {
+                                    detectVerticalDragGestures(
+                                        onDragStart = {},
+                                        onDragEnd = {
+                                            if (dragOffsetY.value > 70f) {
+                                                coroutineScope.launch {
+                                                    dragOffsetY.animateTo(
+                                                        targetValue = 200f,
+                                                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                                                    )
+                                                    onClick()
+                                                    dragOffsetY.snapTo(0f)
+                                                }
+                                            } else {
+                                                coroutineScope.launch {
+                                                    dragOffsetY.animateTo(
+                                                        targetValue = 0f,
+                                                        animationSpec = spring(
+                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                            stiffness = Spring.StiffnessLow
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        onDragCancel = {
+                                            coroutineScope.launch {
+                                                dragOffsetY.animateTo(0f, spring())
+                                            }
+                                        },
+                                        onVerticalDrag = { change, dragAmount ->
+                                            if (dragAmount > 0 || dragOffsetY.value > 0f) {
+                                                change.consume()
+                                                val newY = (dragOffsetY.value + dragAmount * 0.7f).coerceIn(0f, 220f)
+                                                coroutineScope.launch {
+                                                    dragOffsetY.snapTo(newY)
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = { onClick() }
+                                    )
+                                }
+                        )
+                    }
+                }
+            }
+
+            // Discreet bottom-right label: "Live Theme"
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Color.Black.copy(alpha = 0.65f),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(ThemeConfig.Spacing.MD.dp)
-            )
+                    .padding(ThemeConfig.Spacing.XS.dp)
+            ) {
+                Text(
+                    text = "Live Theme",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 9.sp,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                )
+            }
         }
     }
 }
