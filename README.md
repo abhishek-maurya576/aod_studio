@@ -6,7 +6,6 @@ A custom Always-On Display (AOD) engine and visual theme editor for Android. Bui
 
 ## Screenshots
 
-> Place app screenshots in the [`screenshots/`](screenshots/) directory.
 
 | Home & Status | Template Library | Visual Editor | Fullscreen Preview |
 | :---: | :---: | :---: | :---: |
