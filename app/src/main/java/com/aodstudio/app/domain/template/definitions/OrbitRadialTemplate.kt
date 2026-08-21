@@ -60,7 +60,7 @@ object OrbitRadialTemplate : TemplateDefinition {
                 letterSpacing = 0.5f,
                 alignment = "CENTER"
             ),
-            properties = mapOf(AODElement.PROP_BATTERY_STYLE to "PERCENTAGE")
+            properties = mapOf(AODElement.PROP_BATTERY_STYLE to "RING")
         )
     )
 }
