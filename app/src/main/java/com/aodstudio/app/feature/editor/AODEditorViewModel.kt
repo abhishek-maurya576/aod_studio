@@ -11,6 +11,7 @@ import com.aodstudio.app.domain.model.AODElementType
 import com.aodstudio.app.domain.model.AODTheme
 import com.aodstudio.app.domain.usecase.GetThemesUseCase
 import com.aodstudio.app.domain.usecase.SaveThemeUseCase
+import com.aodstudio.app.battery.BatteryRepository
 import com.aodstudio.app.media.MediaRepository
 import com.aodstudio.app.notification.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,7 @@ class AODEditorViewModel @Inject constructor(
     private val getThemesUseCase: GetThemesUseCase,
     private val saveThemeUseCase: SaveThemeUseCase,
     private val settingsRepository: com.aodstudio.app.domain.repository.SettingsRepository,
+    val batteryRepository: BatteryRepository,
     val mediaRepository: MediaRepository,
     val notificationRepository: NotificationRepository
 ) : ViewModel() {
@@ -197,10 +199,27 @@ class AODEditorViewModel @Inject constructor(
             AODElementType.FINGERPRINT -> 1900f
             else -> 1340f
         }
-        val defaultFontSize = if (type == AODElementType.NOTIFICATION) 16f else 24f
+        val defaultFontSize = when (type) {
+            AODElementType.NOTIFICATION -> 16f
+            AODElementType.BATTERY -> 18f
+            else -> 24f
+        }
         val defaultColor = if (type == AODElementType.FINGERPRINT) "#5EC98A" else "#FFFFFF"
-        val defaultWidth = if (type == AODElementType.FINGERPRINT) 120f else 200f
-        val defaultHeight = if (type == AODElementType.FINGERPRINT) 120f else 100f
+        val defaultWidth = when (type) {
+            AODElementType.FINGERPRINT -> 120f
+            AODElementType.BATTERY -> 160f
+            else -> 200f
+        }
+        val defaultHeight = when (type) {
+            AODElementType.FINGERPRINT -> 120f
+            AODElementType.BATTERY -> 60f
+            else -> 100f
+        }
+        val defaultStroke = if (type == AODElementType.BATTERY) 4.5f else 2.5f
+        val defaultProps = when (type) {
+            AODElementType.BATTERY -> mapOf(AODElement.PROP_BATTERY_STYLE to "PERCENTAGE")
+            else -> emptyMap()
+        }
         val existingCount = currentTheme.elements.count { it.type == type }
         val baseName = type.name.lowercase().replaceFirstChar { it.uppercase() }
         val newName = if (existingCount > 0) "$baseName ${existingCount + 1}" else baseName
@@ -215,8 +234,9 @@ class AODEditorViewModel @Inject constructor(
             style = com.aodstudio.app.domain.model.AODStyle(
                 fontSize = defaultFontSize,
                 color = defaultColor,
-                strokeWidth = 2.5f
-            )
+                strokeWidth = defaultStroke
+            ),
+            properties = defaultProps
         )
         val updatedElements = currentTheme.elements + newElem
         _uiState.update {

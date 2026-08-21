@@ -23,7 +23,7 @@ import com.aodstudio.app.ui.theme.Primary
 
 /**
  * Dedicated property controls for BATTERY elements:
- * Battery display style and font/icon size.
+ * Battery display style, font/icon size, and stroke/ring thickness.
  */
 @Composable
 fun BatteryPropertyControls(
@@ -42,25 +42,36 @@ fun BatteryPropertyControls(
             fontWeight = FontWeight.SemiBold,
             color = Primary
         )
+
+        data class BatteryStyleOption(val key: String, val label: String)
+        val styleOptions = listOf(
+            BatteryStyleOption("PERCENTAGE", "% Only"),
+            BatteryStyleOption("ICON", "Icon Only"),
+            BatteryStyleOption("ICON_PERCENTAGE", "Icon + %"),
+            BatteryStyleOption("RING", "Ring Gauge"),
+            BatteryStyleOption("BAR", "Battery Bar")
+        )
+
+        val currentStyle = element.properties[AODElement.PROP_BATTERY_STYLE]?.uppercase() ?: "PERCENTAGE"
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            val styles = listOf("PERCENTAGE", "BAR", "RING", "ICON")
-            val currentStyle = element.properties[AODElement.PROP_BATTERY_STYLE]?.uppercase() ?: "PERCENTAGE"
-
-            styles.forEach { style ->
+            styleOptions.forEach { option ->
+                val isSelected = currentStyle == option.key ||
+                    (option.key == "ICON_PERCENTAGE" && (currentStyle == "ICON_AND_PERCENTAGE" || currentStyle == "PERCENTAGE_ICON"))
                 FilterChip(
-                    selected = currentStyle == style,
+                    selected = isSelected,
                     onClick = {
                         val newProps = element.properties.toMutableMap().apply {
-                            put(AODElement.PROP_BATTERY_STYLE, style)
+                            put(AODElement.PROP_BATTERY_STYLE, option.key)
                         }
                         onUpdateElement(element.copy(properties = newProps))
                     },
-                    label = { Text(style) },
+                    label = { Text(option.label) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Primary,
                         selectedLabelColor = Color.Black
@@ -71,7 +82,7 @@ fun BatteryPropertyControls(
 
         // ─── 2. Battery Size / Font Size ───────────────────────────────
         Text(
-            text = "Battery Text Size: ${element.style.fontSize.toInt()} sp",
+            text = "Battery Size: ${element.style.fontSize.toInt()} sp",
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold
         )
@@ -80,7 +91,23 @@ fun BatteryPropertyControls(
             onValueChange = { newSize ->
                 onUpdateElement(element.copy(style = element.style.copy(fontSize = newSize)))
             },
-            valueRange = 10f..36f,
+            valueRange = 10f..48f,
+            colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
+        )
+
+        // ─── 3. Stroke / Ring Thickness ────────────────────────────────
+        val currentStroke = if (element.style.strokeWidth > 0f) element.style.strokeWidth else 4.5f
+        Text(
+            text = "Stroke / Ring Thickness: ${"%.1f".format(currentStroke)} dp",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Slider(
+            value = currentStroke,
+            onValueChange = { newStroke ->
+                onUpdateElement(element.copy(style = element.style.copy(strokeWidth = newStroke)))
+            },
+            valueRange = 1.5f..12f,
             colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
         )
     }

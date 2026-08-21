@@ -231,12 +231,14 @@ fun AODEditorScreen(
                                 AndroidView(
                                     factory = { context ->
                                         AODRenderView(context).apply {
+                                            setBatteryRepository(viewModel.batteryRepository)
                                             setMediaRepository(viewModel.mediaRepository)
                                             setNotificationRepository(viewModel.notificationRepository)
                                             setTheme(currentTheme)
                                         }
                                     },
                                     update = { renderView ->
+                                        renderView.setBatteryRepository(viewModel.batteryRepository)
                                         renderView.setMediaRepository(viewModel.mediaRepository)
                                         renderView.setNotificationRepository(viewModel.notificationRepository)
                                         renderView.setTheme(currentTheme)
@@ -351,12 +353,14 @@ fun AODEditorScreen(
                     AndroidView(
                         factory = { context ->
                             AODRenderView(context).apply {
+                                setBatteryRepository(viewModel.batteryRepository)
                                 setMediaRepository(viewModel.mediaRepository)
                                 setNotificationRepository(viewModel.notificationRepository)
                                 setTheme(currentTheme)
                             }
                         },
                         update = { renderView ->
+                            renderView.setBatteryRepository(viewModel.batteryRepository)
                             renderView.setMediaRepository(viewModel.mediaRepository)
                             renderView.setNotificationRepository(viewModel.notificationRepository)
                             renderView.setTheme(currentTheme)
