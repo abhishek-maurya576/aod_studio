@@ -31,7 +31,8 @@ data class AODElement(
         const val PROP_TEXT = "text"                // Custom text content
         const val PROP_SHAPE_TYPE = "shapeType"      // CIRCLE, RECTANGLE, LINE, RING, ARC
         const val PROP_SHOW_SECONDS = "showSeconds"  // "true" / "false"
-        const val PROP_BATTERY_STYLE = "batteryStyle"// PERCENTAGE, ICON, RING, BAR
+        const val PROP_BATTERY_STYLE = "batteryStyle"// PERCENTAGE, ICON, ICON_PERCENTAGE, RING, BAR
+        const val PROP_SHOW_PERCENTAGE = "showPercentage" // "true" / "false"
         const val PROP_MUSIC_INFO = "musicInfo"      // TITLE, ARTIST, ALBUM, ARTWORK
         const val PROP_PLAYER_SIZE = "playerSize"    // SMALL / LARGE
         const val PROP_NOTIF_MAX_COUNT = "maxNotifs" // e.g. "5"
